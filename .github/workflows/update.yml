@@ -1,0 +1,35 @@
+name: Update UV & Heat Index
+
+on:
+  schedule:
+    - cron: "17 * * * *"      # tiap jam, menit ke-17 (UTC); GitHub boleh telat beberapa menit
+  workflow_dispatch: {}        # tombol "Run workflow" manual
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-uv-heat
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python scripts/update.py
+      - name: Commit jika ada perubahan
+        run: |
+          git config user.name  "uv-heat-bot"
+          git config user.email "uv-heat-bot@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "Tidak ada perubahan"; else
+            git commit -m "data: update $(TZ=Asia/Jakarta date +'%Y-%m-%d %H:%M') WIB"
+            git push
+          fi
