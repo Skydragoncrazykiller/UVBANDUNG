@@ -39,13 +39,17 @@ Hari dibagi menjadi lima segmen (WIB). Untuk tiap segmen diambil nilai **maksimu
 | Sore | 15:00–18:00 |
 | Malam | 18:00–24:00 |
 
-| Indeks UV (WHO) | Kategori | Heat index (NWS/NOAA) | Kategori |
+| Indeks UV (WHO) | Kategori | Heat index (NWS) | Kategori |
 |---|---|---|---|
-| < 3 | Rendah | < 27 °C | Normal |
-| 3–5 | Sedang | 27–32 °C | Waspada |
-| 6–7 | Tinggi | 32–41 °C | Sangat waspada |
-| 8–10 | Sangat tinggi | 41–54 °C | Bahaya |
-| ≥ 11 | Ekstrem | ≥ 54 °C | Sangat bahaya |
+| < 3 | Rendah | < 27 °C (80 °F) | Aman |
+| 3–5 | Sedang | 27–32 °C (80–90 °F) | Waspada |
+| 6–7 | Tinggi | 32–39 °C (90–103 °F) | Sangat waspada |
+| 8–10 | Sangat tinggi | 39–52 °C (103–125 °F) | Bahaya |
+| ≥ 11 | Ekstrem | ≥ 52 °C (≥ 125 °F) | Sangat bahaya |
+
+Ambang tepatnya adalah 26,7 / 32,2 / 39,4 / 51,7 °C (konversi dari °F). WHO menganjurkan perlindungan dari matahari saat UV ≥ 3, sehingga dasbor menampilkan "jam perlu proteksi" (UV ≥ 3) dan "jendela aman" (UV < 3).
+
+Ringkasan harian juga memuat **pesan untuk mahasiswa** (UV, hidrasi, dan "kombo" minum cukup + sunscreen + berteduh) yang diselaraskan dengan materi poster Diseminasi Informasi Meteorologi.
 
 Kolom **Kepastian** membandingkan beberapa model cuaca Open-Meteo dan memperhitungkan galat input heat index. Bila kisarannya melewati kategori yang lebih berat, tindakan mengikuti skenario terburuk.
 

@@ -45,7 +45,7 @@ md("""
 
 UV ditentukan terutama oleh **sudut matahari** (jam), lalu **awan**, **ozon**, dan **ketinggian** (Bandung ±770 mdpl → UV sedikit lebih kuat dibanding permukaan laut). Bandung di ±6,9° LS sehingga matahari hampir selalu tinggi: UV bisa mencapai kategori "sangat tinggi–ekstrem" sepanjang tahun.
 
-**Heat index (HI)** — "suhu terasa" dari kombinasi suhu udara & kelembapan (rumus NWS/NOAA, Rothfusz). Ambang (°C): <27 nyaman · 27–32 waspada · 32–41 sangat waspada · 41–54 bahaya · ≥54 sangat bahaya. Di bawah ±27 °C rumusnya praktis sama dengan suhu udara, sehingga di kota sejuk seperti Bandung HI sering **tidak melampaui ambang**. Sebagai pembanding, Open-Meteo juga menyediakan `apparent_temperature` (memperhitungkan angin & radiasi).
+**Heat index (HI)** — "suhu terasa" dari kombinasi suhu udara & kelembapan (rumus NWS/NOAA, Rothfusz). Ambang (°C), konversi dari °F NWS 80/90/103/125: < 26,7 aman · 26,7–32,2 waspada · 32,2–39,4 sangat waspada · 39,4–51,7 bahaya · ≥ 51,7 sangat bahaya. Di bawah ±27 °C rumusnya praktis sama dengan suhu udara, sehingga di kota sejuk seperti Bandung HI sering **tidak melampaui ambang**. Sebagai pembanding, Open-Meteo juga menyediakan `apparent_temperature` (memperhitungkan angin & radiasi).
 
 **Kenapa segmen waktu?** UV dan suhu mengikuti siklus matahari: UV nyaris nol malam hari, mulai naik ±06:00, puncak sekitar tengah hari (kira-kira 11:30–12:10 WIB di Bandung), lalu turun. Kebiasaan manusia (kuliah, olahraga, makan siang, pulang) juga mengikuti segmen — jadi rekomendasi paling berguna jika dikaitkan ke segmen.
 """)
@@ -112,7 +112,7 @@ a1.set_ylabel("Indeks UV"); a1.legend(); a1.set_ylim(0, max(12, prof.uv_p90.max(
 a2.fill_between(prof.index, prof.hi_p10, prof.hi_p90, color="#d9480f", alpha=.2, label="Heat index P10–P90")
 a2.plot(prof.index, prof.hi_mean, color="#d9480f", lw=2, label="Heat index rata-rata")
 a2.plot(prof.index, prof.t_mean, color="#1c7ed6", lw=1.5, label="Suhu udara rata-rata")
-a2.axhline(27, color="gray", ls="--", lw=1); a2.text(0.2, 27.2, "ambang waspada HI 27 °C", fontsize=8)
+a2.axhline(26.7, color="gray", ls="--", lw=1); a2.text(0.2, 26.9, "ambang waspada HI 26,7 °C", fontsize=8)
 a2.set_ylabel("°C"); a2.set_xlabel("Jam (WIB)"); a2.legend(); a2.set_xticks(range(0, 24, 2))
 for ax in (a1, a2):
     for a, _ in SEGMEN.values(): ax.axvline(a, color="gray", lw=.6, ls="--")
@@ -141,7 +141,7 @@ ringkas = harian.groupby("segmen").apply(lambda d: pd.Series({
     "%hari UV≥3": pct(d.uv_max, lambda s: s >= 3), "%hari UV≥6": pct(d.uv_max, lambda s: s >= 6),
     "%hari UV≥8": pct(d.uv_max, lambda s: s >= 8), "%hari UV≥11": pct(d.uv_max, lambda s: s >= 11),
     "HI maks rata-rata": d.hi_max.mean(), "HI maks P90": d.hi_max.quantile(.9),
-    "%hari HI≥27": pct(d.hi_max, lambda s: s >= 27), "%hari HI≥32": pct(d.hi_max, lambda s: s >= 32),
+    "%hari HI≥27": pct(d.hi_max, lambda s: s >= 26.7), "%hari HI≥32": pct(d.hi_max, lambda s: s >= 32.2),
     "Awan rata-rata %": d.awan.mean()}), include_groups=False).reindex(SEGMEN_ORDER).round(1)
 display(ringkas)
 """)
@@ -154,7 +154,7 @@ axs[0].boxplot(data_uv, tick_labels=SEGMEN_ORDER, showfliers=False)
 for y in (3, 6, 8, 11): axs[0].axhline(y, color="gray", ls="--", lw=.8)
 axs[0].set_title("UV maksimum per segmen (semua hari)"); axs[0].set_ylabel("UVI")
 axs[1].boxplot(data_hi, tick_labels=SEGMEN_ORDER, showfliers=False)
-for y in (27, 32): axs[1].axhline(y, color="gray", ls="--", lw=.8)
+for y in (26.7, 32.2): axs[1].axhline(y, color="gray", ls="--", lw=.8)
 axs[1].set_title("Heat index maksimum per segmen (semua hari)"); axs[1].set_ylabel("°C")
 fig.tight_layout(); plt.show()
 
@@ -203,10 +203,10 @@ code("""
 delta = (hist.heat_index - hist.temperature_2m)
 print(f"Selisih rata-rata HI − suhu udara: {delta.mean():.2f} °C (maks {delta.max():.1f} °C)")
 tot = len(hist)
-for batas, nama in ((27, "waspada"), (32, "sangat waspada"), (41, "bahaya")):
-    print(f"Jam dengan HI ≥ {batas} °C ({nama}): {100 * (hist.heat_index >= batas).sum() / tot:.2f}% dari semua jam")
-tab = (hist[hist.heat_index >= 27].groupby("segmen").size().reindex(SEGMEN_ORDER).fillna(0).astype(int))
-print("\\nJam HI ≥ 27 °C per segmen:"); display(tab.to_frame("jumlah jam"))
+for batas, nama in ((26.7, "waspada"), (32.2, "sangat waspada"), (39.4, "bahaya")):
+    print(f"Jam dengan HI ≥ {batas:g} °C ({nama}): {100 * (hist.heat_index >= batas).sum() / tot:.2f}% dari semua jam")
+tab = (hist[hist.heat_index >= 26.7].groupby("segmen").size().reindex(SEGMEN_ORDER).fillna(0).astype(int))
+print("\\nJam HI ≥ 26,7 °C per segmen:"); display(tab.to_frame("jumlah jam"))
 """)
 
 md("""
@@ -327,9 +327,9 @@ T0, RH0 = ds.temperature_2m.to_numpy(), ds.relative_humidity_2m.to_numpy()
 mc = np.array([heat_index_c(T0 + rng.normal(0, 1.0, len(ds)), np.clip(RH0 + rng.normal(0, 8, len(ds)), 1, 100)) for _ in range(200)])
 base = ds.heat_index.to_numpy()
 print(f"Simpangan baku HI akibat galat input (rata-rata jam 09–14): {mc.std(0).mean():.2f} °C")
-for batas in (27, 32):
+for batas in (26.7, 32.2):
     frac = 100 * (mc >= batas).mean(1)
-    print(f"Jam dengan HI ≥ {batas} °C: basis {100 * (base >= batas).mean():.1f}% → dengan galat input {frac.mean():.1f}% (95%: {np.percentile(frac, 2.5):.1f}–{np.percentile(frac, 97.5):.1f}%)")
+    print(f"Jam dengan HI ≥ {batas:g} °C: basis {100 * (base >= batas).mean():.1f}% → dengan galat input {frac.mean():.1f}% (95%: {np.percentile(frac, 2.5):.1f}–{np.percentile(frac, 97.5):.1f}%)")
 """)
 
 md("### 11D. Sensitivitas terhadap pilihan batas segmen\nSegmen \"Siang\" didefinisikan 10:00–15:00. Berikut hasilnya bila batas digeser — menunjukkan seberapa besar kesimpulan bergantung pada pilihan analis.")
@@ -351,7 +351,44 @@ md("""
 - **Aturan keputusan:** bila model tidak sepakat atau kisaran melintasi kategori yang lebih berat, ikuti **skenario terburuk** (biaya perlindungan ekstra kecil dibanding risiko kulit terbakar).
 """)
 
-md("## 12. Kesimpulan otomatis (dibangkitkan dari data di atas)")
+md("""
+## 12. Statistik pendukung poster diseminasi
+Bagian ini menguji klaim pada draf materi poster dengan data Bandung, sehingga angka di poster bisa bersumber lokal. Semua angka dihitung dari data model Open-Meteo (bukan sensor ITB) untuk periode yang sama dengan seksi sebelumnya.
+""")
+code("""
+# (a) Klaim draf: "UVI siang hari hampir selalu di atas 3" -> seberapa sering, per jam
+peluang_uv3 = hist[hist.jam.between(9, 15)].groupby("jam").apply(lambda d: 100 * (d.uv_index >= 3).mean(), include_groups=False).round(0)
+print("Persentase hari dengan UV >= 3 pada tiap jam (WIB):"); display(peluang_uv3.to_frame("% hari").T)
+
+# (b) Jam wajib proteksi: jam pertama dan terakhir UV >= 3 per hari
+def rentang_proteksi(d):
+    j = d.loc[d.uv_index >= 3, "jam"]
+    return pd.Series({"mulai": j.min(), "selesai": j.max() + 1}) if len(j) else pd.Series({"mulai": np.nan, "selesai": np.nan})
+rp = hist.groupby("tanggal").apply(rentang_proteksi, include_groups=False)
+print(f"Hari tanpa UV >= 3 sama sekali: {100 * rp.mulai.isna().mean():.1f}%")
+print(f"Jam proteksi (median): {rp.mulai.median():.0f}:00 – {rp.selesai.median():.0f}:00 WIB; "
+      f"kisaran P10–P90 mulai {rp.mulai.quantile(.1):.0f}–{rp.mulai.quantile(.9):.0f}, selesai {rp.selesai.quantile(.1):.0f}–{rp.selesai.quantile(.9):.0f}")
+
+# (c) Jam puncak UV harian (klaim draf: puncak sekitar 11.00–13.00)
+idx = hist.groupby("tanggal").uv_index.idxmax()
+jam_puncak_hari = hist.loc[idx.dropna(), "jam"].value_counts(normalize=True).mul(100).round(1).sort_index()
+print("\\nSebaran jam puncak UV harian (% hari):"); display(jam_puncak_hari.to_frame("% hari").T)
+print(f"Puncak jatuh pada 11:00–13:00 di {jam_puncak_hari.reindex([11, 12, 13]).sum():.0f}% hari.")
+
+# (d) Contoh kasus heat index: kondisi suhu 30 °C dengan RH sekitar 49% (contoh pada draf hidrasi)
+hi_contoh = float(heat_index_c(30, 49))
+print(f"\\nContoh draf: 30 °C dan RH 49% -> heat index {hi_contoh:.1f} °C ({hi_level(hi_contoh)[2]}).")
+mirip = hist[hist.temperature_2m.between(29.5, 30.5) & hist.relative_humidity_2m.between(44, 54)]
+print(f"Jam dengan kondisi serupa di data: {len(mirip)} ({100 * len(mirip) / len(hist):.2f}% dari semua jam)")
+
+# (e) Seberapa sering suhu terasa lebih panas dari suhu udara (heat index minus suhu >= 1 °C)
+print(f"Jam dengan heat index >= suhu udara + 1 °C: {100 * ((hist.heat_index - hist.temperature_2m) >= 1).mean():.1f}% dari semua jam")
+""")
+md("""
+**Cara memakainya di poster:** ganti pernyataan umum dengan angka dari sel di atas, mis. "Di Bandung, UV mencapai tingkat perlu proteksi (≥ 3) pada pukul X–Y WIB pada Z% hari", dan sebut sumbernya (Open-Meteo, 2023–2026, keluaran model). Jika angka tidak mendukung klaim draf, ikuti angkanya.
+""")
+
+md("## 13. Kesimpulan otomatis (dibangkitkan dari data di atas)")
 code("""
 seg_uv = ringkas["%hari UV≥6"].drop("Dini hari").drop("Malam")
 terburuk = seg_uv.idxmax()
@@ -360,8 +397,8 @@ lines = [
     f"- **Puncak UV rata-rata** terjadi sekitar **{jam_puncak:02d}:00 WIB** (rata-rata UVI {prof.uv_mean.max():.1f}).",
     f"- Segmen paling berisiko: **{terburuk}** — pada {seg_uv.max():.0f}% hari UV maksimumnya ≥ 6 (Tinggi), dan {ringkas.loc[terburuk, '%hari UV≥8']:.0f}% hari ≥ 8 (Sangat tinggi).",
     f"- Jam relatif aman (UV<3 di ≥80% hari): {', '.join(f'{j:02d}:00' for j in pagi_aman) or 'tidak ada'}.",
-    f"- Heat index ≥ 27 °C terjadi pada {100 * (hist.heat_index >= 27).mean():.1f}% jam dan ≥ 32 °C pada {100 * (hist.heat_index >= 32).mean():.1f}% jam"
-    + (" → di Bandung heat index jarang jadi masalah dibanding UV." if (hist.heat_index >= 32).mean() < 0.02 else " → heat index perlu diperhatikan, terutama di segmen siang."),
+    f"- Heat index ≥ 26,7 °C terjadi pada {100 * (hist.heat_index >= 26.7).mean():.1f}% jam dan ≥ 32,2 °C pada {100 * (hist.heat_index >= 32.2).mean():.1f}% jam"
+    + (" → di Bandung heat index jarang jadi masalah dibanding UV." if (hist.heat_index >= 32.2).mean() < 0.02 else " → heat index perlu diperhatikan, terutama di segmen siang."),
     f"- Saat awan 75–100%, UV masih ±{efek.rasio_UV_persen.iloc[-1]:.0f}% dari kondisi langit cerah"
     + (" → mendung bukan jaminan aman." if efek.rasio_UV_persen.iloc[-1] >= 30 else " → awan tebal meredam UV cukup besar."),
     f"- **Ketidakpastian statistik (95%)**: UV maks rata-rata segmen Siang {ci_tab.loc['Siang', 'UV maks rata-rata']}; %hari UV≥8 {ci_tab.loc['Siang', '%hari UV≥8']}.",
@@ -377,13 +414,14 @@ for nama, kunci in (("UV < 0,5", 0), ("UV 0,5–2,9", 1), ("UV 3–5,9", 2), ("U
 """)
 
 md("""
-## 13. Sumber data, asumsi, dan batasan
+## 14. Sumber data, asumsi, dan batasan
 
 **Sumber**
 1. Open-Meteo — Forecast API (`api.open-meteo.com/v1/forecast`) & Historical Forecast API (`historical-forecast-api.open-meteo.com`). Lisensi data CC BY 4.0, gratis untuk non-komersial. Sitasi: Zippenfenig, P. (2023). *Open-Meteo.com Weather API*. Zenodo. https://doi.org/10.5281/zenodo.7970649 · dokumentasi: https://open-meteo.com/en/docs
 2. Skala indeks UV & kategori: WHO/WMO/UNEP/ICNIRP (2002), *Global Solar UV Index: A Practical Guide*.
 3. Heat index: US National Weather Service, https://www.weather.gov/ama/heatindex ; regresi Rothfusz (1990), NWS Technical Attachment SR 90-23; dasar: Steadman (1979), *J. Applied Meteorology* 18.
-4. Ambang kategori heat index (°C): tabel NWS/NOAA yang dikonversi ke Celsius.
+4. Ambang kategori heat index (°C): ambang NWS dalam °F (80/90/103/125) yang dikonversi ke Celsius (26,7/32,2/39,4/51,7).
+5. Pesan hidrasi: Kemenkes RI (Permenkes No. 28/2019 tentang AKG) dan imbauan BMKG, sebagaimana dirujuk pada draf materi kelompok.
 
 **Asumsi**
 - **A1 Lokasi:** satu titik (−6,8915; 107,6107) = ITB Ganesha; resolusi model ≫ kampus, jadi iklim mikro (bayangan gedung, aspal, pepohonan) tidak tertangkap.
@@ -399,7 +437,7 @@ md("""
 **Batasan utama:** tanpa validasi terhadap alat ukur UV/AWS di ITB (mis. stasiun BMKG/kampus) hasil ini bersifat indikatif. Langkah berikutnya yang paling berharga adalah membandingkan keluaran model dengan pengukuran lokal.
 """)
 
-md("## 14. Ekspor data")
+md("## 15. Ekspor data")
 code("""
 hist.drop(columns=["tanggal"]).to_csv("bandung_uv_hi_per_jam.csv", index=False)
 ringkas.to_csv("ringkasan_per_segmen.csv")

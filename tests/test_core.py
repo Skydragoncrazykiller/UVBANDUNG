@@ -15,7 +15,10 @@ def test_levels():
     assert core.uv_level(3.0)[2] == "Sedang"
     assert core.uv_level(8.0)[2] == "Sangat tinggi"
     assert core.uv_level(11.0)[2] == "Ekstrem"
-    assert core.hi_level(26.9)[1] == 0 and core.hi_level(27)[1] == 1 and core.hi_level(41)[1] == 3
+    assert core.hi_level(26.6)[1] == 0 and core.hi_level(26.7)[1] == 1 and core.hi_level(32.3)[1] == 2
+    assert core.hi_level(39.4)[1] == 3 and core.hi_level(51.7)[1] == 4
+    # contoh di draf materi: 30 °C, RH 49% -> sekitar 31 °C (Waspada)
+    h = float(core.heat_index_c(30, 49)); assert abs(h - 31) < 0.5 and core.hi_level(h)[2] == "Waspada"
 
 def test_segmen_covers_24h():
     assert sorted(core.segmen_of_hour(h) for h in range(24)) == sorted(
@@ -56,3 +59,11 @@ def test_model_identik_tidak_dianggap_sepakat():
     assert (out[out.segmen == "Siang"].keyakinan == "Tidak dapat dinilai").all()
     # HI 22 °C tidak boleh memicu peringatan skenario terburuk hanya karena galat input
     assert not out.skenario_terburuk.any()
+
+
+def test_jendela_proteksi_dan_pesan():
+    import pandas as pd
+    d = pd.DataFrame({"jam": range(24), "uv_index": [0]*6 + [1, 2, 4, 7, 9, 10, 9, 7, 4, 2, 1, 0] + [0]*6})
+    assert core.jendela_proteksi_uv(d) == [(8, 15)]
+    m = core.pesan_mahasiswa(10, 11, "08:00–15:00", 28)
+    assert len(m) == 3 and "sunscreen" in m[0] and "8 gelas" in m[1]

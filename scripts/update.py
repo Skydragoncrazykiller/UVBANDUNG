@@ -101,7 +101,8 @@ def main() -> None:
 
     (DATA / "today.json").write_text(json.dumps({
         "updated_wib": now.strftime("%Y-%m-%d %H:%M"), "lokasi": core.LOKASI,
-        "tanggal": now.date().isoformat(), "segmen": seg.to_dict("records"),
+        "tanggal": now.date().isoformat(), "pesan_mahasiswa": render.ringkasan(hari)["pesan"],
+        "segmen": seg.to_dict("records"),
     }, ensure_ascii=False, indent=2))
 
     render.plot_today(hari, str(DOCS / "today.png"), now)

@@ -6,7 +6,8 @@
 | 1 | [Open-Meteo Forecast API](https://open-meteo.com/en/docs) | UV, suhu 2 m, RH, awan, hujan per jam (hari ini & prakiraan) |
 | 2 | [Open-Meteo Historical Forecast API](https://open-meteo.com/en/docs/historical-forecast-api) | Riwayat per jam untuk notebook |
 | 3 | WHO/WMO/UNEP/ICNIRP (2002), *Global Solar UV Index: A Practical Guide* | Kategori UV |
-| 4 | [US NWS Heat Index](https://www.weather.gov/ama/heatindex); Rothfusz (1990), NWS TA SR 90-23; Steadman (1979), *J. Appl. Meteor.* 18 | Rumus & ambang heat index |
+| 4 | [US NWS Heat Index](https://www.weather.gov/ama/heatindex); Rothfusz (1990), NWS TA SR 90-23; Steadman (1979), *J. Appl. Meteor.* 18 | Rumus & ambang heat index: 80/90/103/125 °F = 26,7/32,2/39,4/51,7 °C |
+| 5 | Kemenkes RI, Permenkes No. 28 Tahun 2019 (AKG); imbauan BMKG tentang cuaca panas (rujukan dari draf materi kelompok, URL belum diverifikasi ulang) | Pesan hidrasi: target minimal 8 gelas/hari, ±250 ml tiap jam saat aktivitas panas di luar ruang |
 
 Sitasi Open-Meteo: Zippenfenig, P. (2023). *Open-Meteo.com Weather API*. Zenodo. <https://doi.org/10.5281/zenodo.7970649>. Lisensi data CC BY 4.0 (non-komersial).
 
@@ -14,7 +15,8 @@ Sitasi Open-Meteo: Zippenfenig, P. (2023). *Open-Meteo.com Weather API*. Zenodo.
 1. Data per jam diambil dalam zona `Asia/Jakarta` (WIB, UTC+7) untuk titik ITB Ganesha (−6,8915; 107,6107).
 2. Heat index dihitung dari suhu 2 m & RH (NWS Rothfusz + koreksi; di bawah ±27 °C hasilnya ≈ suhu udara).
 3. Hari dibagi ke segmen: Dini hari 00–06, Pagi 06–10, Siang 10–15, Sore 15–18, Malam 18–24 (`SEGMEN` di `uvheat/core.py`).
-4. Per segmen diambil **nilai maksimum** UV dan HI (kondisi terburuk dalam segmen), lalu diklasifikasi dan diterjemahkan ke tindakan dengan aturan tetap (`UV_TINDAKAN`, `HI_TINDAKAN`).
+4. Ambang heat index (°C) berasal dari konversi ambang NWS dalam °F: Waspada ≥ 26,7; Sangat waspada ≥ 32,2; Bahaya ≥ 39,4; Sangat bahaya ≥ 51,7.
+5. Per segmen diambil **nilai maksimum** UV dan HI (kondisi terburuk dalam segmen), lalu diklasifikasi dan diterjemahkan ke tindakan dengan aturan tetap (`UV_TINDAKAN`, `HI_TINDAKAN`). "Jam perlu proteksi" adalah jam dengan UV ≥ 3 (anjuran WHO); pesan untuk mahasiswa dibangkitkan dari aturan di `pesan_mahasiswa()`.
 
 ## 3. Asumsi
 - **A1** Satu titik; iklim mikro kampus (bayangan gedung, aspal, pohon) tidak tertangkap model.
@@ -34,6 +36,6 @@ Sitasi Open-Meteo: Zippenfenig, P. (2023). *Open-Meteo.com Weather API*. Zenodo.
 | Galat input & rumus HI | Suhu/RH tidak sempurna; regresi NWS ±1,3 °F | Kisaran HI = nilai ± 1 simpangan baku propagasi galat (T 1 °C, RH 8%) dan antar-model; Monte Carlo di notebook 11C |
 | Pilihan analis | Batas segmen, ambang | Uji sensitivitas notebook 11D |
 
-**Aturan keputusan:** bila kisaran melintasi kategori yang lebih berat dari nilai utama, kolom tindakan memakai **skenario terburuk** dan ditandai "skenario terburuk" pada kolom Kepastian.
+**Aturan keputusan:** bila kisaran melintasi kategori yang lebih berat dari nilai utama, kolom tindakan memakai **skenario terburuk** dan diberi tanda ⚠️.
 
 **Batasan utama:** belum ada validasi terhadap alat ukur UV/stasiun cuaca di ITB; hasil bersifat indikatif. Model yang tidak menyediakan `uv_index` otomatis dilewati; bila hanya satu model tersedia, kepastian ditulis "Tidak diketahui", bukan "Tinggi".

@@ -162,13 +162,13 @@ UV_LEVELS = [
 ]
 UV_NONE = ("Tidak ada", "#d9dee3", "#33404d")
 
-# Heat index NWS/NOAA (°C)
+# Heat index NWS (ambang dari °F: 80/90/103/125 °F = 26,7/32,2/39,4/51,7 °C)
 HI_LEVELS = [
-    (-99.0, 0, "Normal", "#2e8b3d", "#ffffff"),
-    (27.0, 1, "Waspada", "#f2d600", "#1b1b1b"),
-    (32.0, 2, "Sangat waspada", "#f28a00", "#1b1b1b"),
-    (41.0, 3, "Bahaya", "#d62f2f", "#ffffff"),
-    (54.0, 4, "Sangat bahaya", "#6a4bc4", "#ffffff"),
+    (-99.0, 0, "Aman", "#2e8b3d", "#ffffff"),
+    (26.7, 1, "Waspada", "#f2d600", "#1b1b1b"),
+    (32.2, 2, "Sangat waspada", "#f28a00", "#1b1b1b"),
+    (39.4, 3, "Bahaya", "#d62f2f", "#ffffff"),
+    (51.7, 4, "Sangat bahaya", "#6a4bc4", "#ffffff"),
 ]
 
 
@@ -204,10 +204,10 @@ UV_TINDAKAN = {
 }
 HI_TINDAKAN = {
     0: [],
-    1: ["Bawa air minum."],
-    2: ["Minum rutin; kurangi aktivitas berat."],
-    3: ["Hindari aktivitas berat di luar ruang."],
-    4: ["Tunda aktivitas luar ruang."],
+    1: ["Bawa botol minum; minum sebelum haus."],
+    2: ["Minum ±250 ml tiap jam secara perlahan; kurangi aktivitas berat."],
+    3: ["Hindari aktivitas berat di luar ruang; minum ±250 ml tiap jam."],
+    4: ["Tunda aktivitas luar ruang (risiko sengatan panas)."],
 }
 
 
@@ -278,10 +278,12 @@ def ringkas_segmen(df_hari: pd.DataFrame, now: pd.Timestamp | None = None) -> pd
     return pd.DataFrame(rows)
 
 
-def jendela_aman_uv(df_hari: pd.DataFrame, batas: float = 3.0, jam_awal: int = 6, jam_akhir: int = 18) -> list[tuple[int, int]]:
-    """Rentang jam siang (06–18) saat UV < batas, berupa [(jam_mulai, jam_selesai_eksklusif), ...]."""
+def jendela_aman_uv(df_hari: pd.DataFrame, batas: float = 3.0, jam_awal: int = 6, jam_akhir: int = 18,
+                    di_atas: bool = False) -> list[tuple[int, int]]:
+    """Rentang jam siang (06–18) dengan UV < batas (aman) atau, bila di_atas=True, UV >= batas (perlu proteksi).
+    Hasil: [(jam_mulai, jam_selesai_eksklusif), ...]."""
     d = df_hari[(df_hari["jam"] >= jam_awal) & (df_hari["jam"] < jam_akhir)].sort_values("jam")
-    ok = (d["uv_index"] < batas).tolist()
+    ok = ((d["uv_index"] >= batas) if di_atas else (d["uv_index"] < batas)).tolist()
     jam = d["jam"].tolist()
     out, start = [], None
     for h, flag in zip(jam, ok):
@@ -292,6 +294,27 @@ def jendela_aman_uv(df_hari: pd.DataFrame, batas: float = 3.0, jam_awal: int = 6
     if start is not None:
         out.append((start, jam[-1] + 1))
     return out
+
+
+def jendela_proteksi_uv(df_hari: pd.DataFrame, batas: float = 3.0) -> list[tuple[int, int]]:
+    """Jam saat UV >= 3 (WHO: perlindungan dari matahari dianjurkan)."""
+    return jendela_aman_uv(df_hari, batas, di_atas=True)
+
+
+def pesan_mahasiswa(uv: float, uv_jam: int, proteksi: str, hi: float) -> list[str]:
+    """Tiga pesan singkat bergaya poster untuk mahasiswa: UV, hidrasi, dan 'kombo'."""
+    lv = uv_level(uv)[2].lower()
+    if uv >= 3:
+        pesan_uv = (f"UV hari ini mencapai {fmt_id(uv)} ({lv}) sekitar pukul {uv_jam:02d}:00. "
+                    f"Pakai sunscreen dan cari tempat teduh pada {proteksi}.")
+    else:
+        pesan_uv = f"UV hari ini rendah (maks {fmt_id(uv)}); tidak perlu proteksi khusus."
+    pesan_air = "Target minimal 8 gelas air putih sehari."
+    if hi >= 26.7 or uv >= 6:
+        pesan_air += " Kalau kamu banyak di luar ruang, minum ±250 ml tiap jam secara perlahan."
+    pesan_air += " Cek warna pipis: kuning pucat berarti cukup."
+    kombo = "Kombo hari ini: minum cukup + sunscreen + berteduh di jam puncak." if uv >= 3 else "Tetap bawa botol minum ke kuliah dan praktikum."
+    return [pesan_uv, pesan_air, kombo]
 
 
 def fmt_jendela(w: list[tuple[int, int]]) -> str:

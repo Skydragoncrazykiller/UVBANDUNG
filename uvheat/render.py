@@ -10,7 +10,8 @@ import numpy as np
 import pandas as pd
 
 from .core import (LOKASI, SEGMEN, SEGMEN_ORDER, estimasi_menit_aman, fmt_id,
-                   fmt_jendela, hi_level, jendela_aman_uv, teks_kepastian, uv_level)
+                   fmt_jendela, hi_level, jendela_aman_uv, jendela_proteksi_uv, pesan_mahasiswa,
+                   teks_kepastian, uv_level)
 
 BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus",
          "September", "Oktober", "November", "Desember"]
@@ -27,12 +28,15 @@ def ringkasan(df_hari: pd.DataFrame) -> dict:
     uv, jam = float(df_hari.loc[i, "uv_index"]), int(df_hari.loc[i, "jam"])
     hi = float(df_hari["heat_index"].max())
     lv = uv_level(uv)
-    return {
+    k = {
         "uv": uv, "uv_jam": jam, "uv_label": lv[2], "uv_bg": lv[3], "uv_fg": lv[4],
         "menit": estimasi_menit_aman(uv),
         "aman": fmt_jendela(jendela_aman_uv(df_hari)),
+        "proteksi": fmt_jendela(jendela_proteksi_uv(df_hari)),
         "hi": hi, "hi_label": hi_level(hi)[2], "hi_bg": hi_level(hi)[3], "hi_fg": hi_level(hi)[4],
     }
+    k["pesan"] = pesan_mahasiswa(uv, jam, k["proteksi"], hi)
+    return k
 
 
 def _uv_cell(r) -> str:
@@ -46,6 +50,7 @@ def markdown_today(seg_df: pd.DataFrame, df_hari: pd.DataFrame, updated: pd.Time
     out = [f"**{tanggal_id(df_hari['time'].iloc[0])}** · {LOKASI} · diperbarui {updated:%H:%M} WIB", "",
            "| Ringkasan hari ini | |", "|---|---|",
            f"| Puncak UV | **{fmt_id(k['uv'])}** ({k['uv_label']}) pukul {k['uv_jam']:02d}:00 WIB |",
+           f"| Jam perlu proteksi (UV ≥ 3) | {k['proteksi']} |",
            f"| Jendela UV aman (< 3) | {k['aman']} |",
            f"| Heat index tertinggi | **{fmt_id(k['hi'])} °C** ({k['hi_label']}) |", "",
            "| Segmen | Jam (WIB) | UV maks | Heat index maks | Kepastian | Tindakan |",
@@ -53,6 +58,7 @@ def markdown_today(seg_df: pd.DataFrame, df_hari: pd.DataFrame, updated: pd.Time
     for r in seg_df.itertuples():
         nama = f"**{r.segmen}**" + (" (berlangsung)" if r.status == "Berlangsung" else "")
         out.append(f"| {nama} | {r.jam} | {_uv_cell(r)} | **{fmt_id(r.hi_max)} °C** {r.hi_label} | {teks_kepastian(r)} | {r.tindakan} |")
+    out += ["", "**Pesan hari ini untuk mahasiswa**", ""] + [f"- {m}" for m in k["pesan"]]
     out += ["", "<sub>Sumber: Open-Meteo. Angka adalah keluaran model, bukan pengukuran sensor di ITB; "
                 "lihat [METODOLOGI.md](METODOLOGI.md) untuk asumsi dan ketidakpastian.</sub>"]
     return "\n".join(out)
@@ -129,16 +135,18 @@ def html_page(seg_df: pd.DataFrame, df_hari: pd.DataFrame, updated: pd.Timestamp
 <section class="kpis">
 <div class="kpi"><div class="l">Puncak UV</div><div class="v">{fmt_id(k['uv'])}</div>
 <div class="s">{_pill(k['uv_label'], k['uv_bg'], k['uv_fg'])} pukul {k['uv_jam']:02d}:00 WIB</div><div class="s">{esc(menit)}</div></div>
-<div class="kpi"><div class="l">Jendela UV aman (&lt; 3)</div><div class="v" style="font-size:1.35rem">{esc(k['aman'])}</div><div class="s">Waktu terbaik untuk kegiatan luar ruang</div></div>
+<div class="kpi"><div class="l">Jam perlu proteksi (UV ≥ 3)</div><div class="v" style="font-size:1.35rem">{esc(k['proteksi'])}</div><div class="s">Jendela aman (UV &lt; 3): {esc(k['aman'])}</div></div>
 <div class="kpi"><div class="l">Heat index tertinggi</div><div class="v">{fmt_id(k['hi'])} °C</div><div class="s">{_pill(k['hi_label'], k['hi_bg'], k['hi_fg'])}</div></div>
 </section>
 <h2>Ringkasan dan tindakan per segmen waktu</h2>
 <div class="tablewrap"><table><thead><tr><th>Segmen (WIB)</th><th>UV maks</th><th>Heat index maks</th><th>Kepastian</th><th>Tindakan</th></tr></thead>
 <tbody>{''.join(rows)}</tbody></table></div>
+<h2>Pesan hari ini untuk mahasiswa</h2>
+<div class="tablewrap" style="padding:6px 20px"><ul style="padding-left:18px;margin:10px 0">{''.join(f"<li>{esc(m)}</li>" for m in k["pesan"])}</ul></div>
 <h2>Grafik</h2><div class="charts"><img src="today.png" alt="UV, heat index, dan suhu per jam hari ini"><img src="trend.png" alt="UV dan heat index maksimum per segmen, 14 hari"></div>
 <details><summary>Cara membaca, asumsi, dan ketidakpastian</summary><ul>
 <li>Nilai per segmen adalah <b>maksimum</b> dalam segmen tersebut (kondisi terburuk). Batas segmen: Dini hari 00–06, Pagi 06–10, Siang 10–15, Sore 15–18, Malam 18–24 WIB.</li>
-<li>UV mengikuti skala WHO (rendah &lt; 3, sedang 3–5, tinggi 6–7, sangat tinggi 8–10, ekstrem ≥ 11). Heat index mengikuti ambang NWS/NOAA (waspada ≥ 27 °C, sangat waspada ≥ 32 °C, bahaya ≥ 41 °C).</li>
+<li>UV mengikuti skala WHO (rendah &lt; 3, sedang 3–5, tinggi 6–7, sangat tinggi 8–10, ekstrem ≥ 11). Heat index mengikuti ambang NWS (waspada ≥ 26,7 °C, sangat waspada ≥ 32,2 °C, bahaya ≥ 39,4 °C, sangat bahaya ≥ 51,7 °C; setara 80/90/103/125 °F).</li>
 <li>Data adalah keluaran model numerik Open-Meteo, bukan pengukuran sensor di ITB, dan belum divalidasi dengan alat ukur lokal.</li>
 <li>Kolom Kepastian membandingkan beberapa model cuaca dan memperhitungkan galat input heat index (1 simpangan baku: suhu 1 °C, RH 8%). Jika kisarannya melewati kategori yang lebih berat, tindakan mengikuti skenario terburuk.</li>
 <li>Tindakan adalah pedoman umum, bukan nasihat medis.</li>
@@ -166,7 +174,7 @@ def plot_today(df_hari: pd.DataFrame, path: str, now: pd.Timestamp | None = None
         a2.plot(x, df_hari["heat_index"], color="#c2410c", lw=2, label="Heat index")
         a2.plot(x, df_hari["temperature_2m"], color="#1c5fa8", lw=1.5, label="Suhu udara")
         a2.plot(x, df_hari["apparent_temperature"], color="#2f7d4a", lw=1.2, ls=":", label="Suhu terasa (Open-Meteo)")
-        a2.axhline(27, color="#8a949e", lw=.8, ls="--"); a2.text(23.9, 27.15, "ambang waspada 27 °C", ha="right", fontsize=7.5, color="#5b6773")
+        a2.axhline(26.7, color="#8a949e", lw=.8, ls="--"); a2.text(23.9, 27.15, "ambang waspada 27 °C", ha="right", fontsize=7.5, color="#5b6773")
         a2.set_ylabel("°C"); a2.legend(loc="upper left", fontsize=8, ncol=3, frameon=False)
         for ax in (a1, a2):
             for a, _ in SEGMEN.values():
