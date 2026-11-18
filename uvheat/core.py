@@ -152,23 +152,29 @@ def segmen_of_hour(h: int) -> str:
     raise ValueError(h)
 
 
-# WHO / WMO UV index
-UV_LEVELS = [  # (batas_bawah, kode, label, emoji)
-    (0.0, 0, "Rendah", "🟢"),      # 0–2.9 (0 = tidak ada sinar)
-    (3.0, 1, "Sedang", "🟡"),
-    (6.0, 2, "Tinggi", "🟠"),
-    (8.0, 3, "Sangat tinggi", "🔴"),
-    (11.0, 4, "Ekstrem", "🟣"),
+# Skala indeks UV WHO/WMO. (batas_bawah, kode, label, warna_latar, warna_teks)
+UV_LEVELS = [
+    (0.0, 0, "Rendah", "#2e8b3d", "#ffffff"),
+    (3.0, 1, "Sedang", "#f2d600", "#1b1b1b"),
+    (6.0, 2, "Tinggi", "#f28a00", "#1b1b1b"),
+    (8.0, 3, "Sangat tinggi", "#d62f2f", "#ffffff"),
+    (11.0, 4, "Ekstrem", "#6a4bc4", "#ffffff"),
+]
+UV_NONE = ("Tidak ada", "#d9dee3", "#33404d")
+
+# Heat index NWS/NOAA (°C)
+HI_LEVELS = [
+    (-99.0, 0, "Normal", "#2e8b3d", "#ffffff"),
+    (27.0, 1, "Waspada", "#f2d600", "#1b1b1b"),
+    (32.0, 2, "Sangat waspada", "#f28a00", "#1b1b1b"),
+    (41.0, 3, "Bahaya", "#d62f2f", "#ffffff"),
+    (54.0, 4, "Sangat bahaya", "#6a4bc4", "#ffffff"),
 ]
 
-# Heat index NOAA/NWS (°C)
-HI_LEVELS = [
-    (-99.0, 0, "Nyaman/normal", "🟢"),
-    (27.0, 1, "Waspada (caution)", "🟡"),
-    (32.0, 2, "Sangat waspada", "🟠"),
-    (41.0, 3, "Bahaya", "🔴"),
-    (54.0, 4, "Sangat bahaya", "🟣"),
-]
+
+def fmt_id(x: float, nd: int = 1) -> str:
+    """Format angka dengan koma desimal (konvensi Indonesia)."""
+    return f"{x:.{nd}f}".replace(".", ",")
 
 
 def _level(value: float, table):
@@ -176,7 +182,7 @@ def _level(value: float, table):
     for row in table:
         if value >= row[0]:
             chosen = row
-    return chosen  # (batas, kode, label, emoji)
+    return chosen  # (batas, kode, label, warna_latar, warna_teks)
 
 
 def uv_level(v: float):
@@ -190,20 +196,18 @@ def hi_level(v: float):
 # 4. RINGKASAN SEGMEN & REKOMENDASI TINDAKAN
 # ----------------------------------------------------------------------------
 UV_TINDAKAN = {
-    0: ["Tidak ada paparan UV berarti; tabir surya tidak diperlukan."],
-    1: ["Aman beraktivitas di luar ruang.", "Tabir surya opsional (SPF 30 jika >1 jam)."],
-    2: ["Oleskan tabir surya SPF 30+ 15–30 menit sebelum keluar.", "Pakai kacamata hitam; cari teduh saat terik."],
-    3: ["Tabir surya SPF 50+, topi lebar, lengan panjang; ulangi oles tiap 2 jam.",
-        "Batasi di luar ruang tanpa naungan; pindahkan kegiatan ke ruang teduh atau segmen UV lebih rendah."],
-    4: ["Hindari aktivitas luar ruang tanpa perlindungan penuh (SPF 50+, topi, kacamata UV, pakaian menutup).",
-        "Tunda kegiatan lapangan/olahraga ke segmen lain."],
+    0: ["Tabir surya tidak diperlukan."],
+    1: ["Aman di luar ruang; tabir surya opsional."],
+    2: ["SPF 30+ dan kacamata hitam; cari teduh saat terik."],
+    3: ["SPF 50+, topi, lengan panjang; ulangi tiap 2 jam."],
+    4: ["Hindari luar ruang tanpa naungan; bila perlu SPF 50+, topi, pakaian menutup."],
 }
 HI_TINDAKAN = {
     0: [],
-    1: ["Suhu terasa hangat: bawa air minum, istirahat di tempat teduh tiap ±1 jam."],
-    2: ["Minum 1 gelas (±250 ml) tiap 20–30 menit; kurangi aktivitas berat; istirahat teduh tiap 30 menit."],
-    3: ["Hindari aktivitas fisik berat di luar ruang; risiko kram/heat exhaustion."],
-    4: ["Tunda semua aktivitas luar ruang; risiko heat stroke."],
+    1: ["Bawa air minum."],
+    2: ["Minum rutin; kurangi aktivitas berat."],
+    3: ["Hindari aktivitas berat di luar ruang."],
+    4: ["Tunda aktivitas luar ruang."],
 }
 
 
@@ -220,9 +224,9 @@ def estimasi_menit_aman(uv: float) -> int | None:
 def rekomendasi(seg: str, uv_max: float, hi_max: float, cloud_mean: float, rain_sum: float) -> str:
     parts = list(_uv_actions(uv_max)) + HI_TINDAKAN[hi_level(hi_max)[1]]
     if uv_max >= 3 and cloud_mean >= 60:
-        parts.append("Meski berawan/mendung, UV tetap menembus awan — tetap pakai perlindungan.")
+        parts.append("Mendung tidak mengurangi risiko UV.")
     if rain_sum >= 1:
-        parts.append("Ada potensi hujan; bawa payung/jas hujan.")
+        parts.append("Bawa payung.")
     return " ".join(parts)
 
 
@@ -254,15 +258,16 @@ def ringkas_segmen(df_hari: pd.DataFrame, now: pd.Timestamp | None = None) -> pd
         if now is not None:
             start = d["time"].min().normalize() + pd.Timedelta(hours=a)
             end = d["time"].min().normalize() + pd.Timedelta(hours=b)
-            status = "▶ Sekarang" if start <= now < end else ("Berikutnya" if now < start else "Sudah lewat")
+            status = "Berlangsung" if start <= now < end else ("Akan datang" if now < start else "Selesai")
         rows.append({
             "segmen": seg, "jam": f"{a:02d}:00–{b % 24:02d}:00" if b < 24 else f"{a:02d}:00–24:00",
             "status": status,
             "uv_max": round(uv_max, 1), "jam_uv_max": int(d.loc[i_uv, "jam"]) if uv_max > 0 else None,
-            "uv_label": uv_level(uv_max)[2] if uv_max >= 0.5 else "Tidak ada",
-            "uv_emoji": uv_level(uv_max)[3] if uv_max >= 0.5 else "⚫",
+            "uv_label": uv_level(uv_max)[2] if uv_max >= 0.5 else UV_NONE[0],
+            "uv_bg": uv_level(uv_max)[3] if uv_max >= 0.5 else UV_NONE[1],
+            "uv_fg": uv_level(uv_max)[4] if uv_max >= 0.5 else UV_NONE[2],
             "hi_max": round(hi_max, 1), "jam_hi_max": int(d.loc[i_hi, "jam"]),
-            "hi_label": hi_level(hi_max)[2], "hi_emoji": hi_level(hi_max)[3],
+            "hi_label": hi_level(hi_max)[2], "hi_bg": hi_level(hi_max)[3], "hi_fg": hi_level(hi_max)[4],
             "t_hi": float(d.loc[i_hi, "temperature_2m"]), "rh_hi": float(d.loc[i_hi, "relative_humidity_2m"]),
             "suhu_mean": round(float(d["temperature_2m"].mean()), 1),
             "rh_mean": round(float(d["relative_humidity_2m"].mean())),
@@ -327,7 +332,7 @@ def tambah_ketidakpastian(seg: pd.DataFrame, per_model: dict, tanggal) -> pd.Dat
     seg = seg.copy()
     kis = kisaran_model(per_model, tanggal)
     cols = {k: [] for k in ("uv_lo", "uv_hi", "hi_lo", "hi_hi", "n_model", "keyakinan")}
-    tind = []
+    tind, terburuk = [], []
     for r in seg.itertuples():
         k = kis[kis["segmen"] == r.segmen]
         uvs = [r.uv_max] + k["uv"].dropna().tolist()
@@ -344,20 +349,26 @@ def tambah_ketidakpastian(seg: pd.DataFrame, per_model: dict, tanggal) -> pd.Dat
         cols["hi_lo"].append(round(min(his), 1)); cols["hi_hi"].append(round(max(his), 1))
         cols["n_model"].append(int(n)); cols["keyakinan"].append(label_keyakinan(uv_lo, uv_hi, n))
         if uv_bucket(uv_hi) > uv_bucket(r.uv_max) or hi_level(max(his))[1] > hi_level(r.hi_max)[1]:
-            tind.append("⚠️ Prakiraan tidak pasti; memakai skenario terburuk. "
-                        + rekomendasi(r.segmen, uv_hi, max(his), r.awan_mean, r.hujan_mm))
+            tind.append(rekomendasi(r.segmen, uv_hi, max(his), r.awan_mean, r.hujan_mm))
+            terburuk.append(True)
         else:
             tind.append(r.tindakan)
+            terburuk.append(False)
     for k_, v in cols.items():
         seg[k_] = v
     seg["tindakan"] = tind
+    seg["skenario_terburuk"] = terburuk
     return seg
 
 
 def teks_kepastian(r) -> str:
-    """Satu baris ringkas untuk tabel: keyakinan + kisaran."""
-    if getattr(r, "uv_hi", 0) < 0.5 and r.uv_max < 0.5:
-        return f"{r.keyakinan}. HI {r.hi_lo:.0f}–{r.hi_hi:.0f} °C"
+    """Ringkasan kepastian untuk tabel: label, kisaran, dan penanda skenario terburuk."""
+    hi = f"HI {fmt_id(r.hi_lo, 0)}–{fmt_id(r.hi_hi, 0)} °C"
+    if r.uv_hi < 0.5 and r.uv_max < 0.5:
+        return f"{r.keyakinan} · {hi}"
     if r.keyakinan == "Tidak dapat dinilai":
-        return f"{r.keyakinan}: model memberi UV identik ({r.uv_max:.1f}), kemungkinan sumber sama. HI {r.hi_lo:.0f}–{r.hi_hi:.0f} °C"
-    return f"{r.keyakinan}. UV {r.uv_lo:.1f}–{r.uv_hi:.1f}, HI {r.hi_lo:.0f}–{r.hi_hi:.0f} °C ({r.n_model} model)"
+        return f"Tidak dapat dinilai (model memberi UV identik) · {hi}"
+    out = f"{r.keyakinan} · UV {fmt_id(r.uv_lo)}–{fmt_id(r.uv_hi)} · {hi} · {r.n_model} model"
+    if getattr(r, "skenario_terburuk", False):
+        out += " · skenario terburuk"
+    return out

@@ -39,7 +39,7 @@ def test_ketidakpastian():
     s = out[out.segmen == "Pagi"].iloc[0]   # UV maks 7 (Tinggi) -> model tinggi 9.8 (Sangat tinggi)
     assert s.uv_hi > s.uv_max and s.n_model == 3
     assert s.keyakinan in ("Sedang", "Rendah")
-    assert s.tindakan.startswith("⚠️")
+    assert bool(s.skenario_terburuk)
     solo = core.tambah_ketidakpastian(seg, {}, "2026-01-01")
     assert (solo.keyakinan == "Tidak diketahui").all()
 
@@ -55,4 +55,4 @@ def test_model_identik_tidak_dianggap_sepakat():
     out = core.tambah_ketidakpastian(seg, {"kembar": base.copy()}, "2026-01-01")
     assert (out[out.segmen == "Siang"].keyakinan == "Tidak dapat dinilai").all()
     # HI 22 °C tidak boleh memicu peringatan skenario terburuk hanya karena galat input
-    assert not out.tindakan.str.contains("hangat").any()
+    assert not out.skenario_terburuk.any()

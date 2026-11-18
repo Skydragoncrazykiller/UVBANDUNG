@@ -34,6 +34,6 @@ Sitasi Open-Meteo: Zippenfenig, P. (2023). *Open-Meteo.com Weather API*. Zenodo.
 | Galat input & rumus HI | Suhu/RH tidak sempurna; regresi NWS ±1,3 °F | Kisaran HI = nilai ± 1 simpangan baku propagasi galat (T 1 °C, RH 8%) dan antar-model; Monte Carlo di notebook 11C |
 | Pilihan analis | Batas segmen, ambang | Uji sensitivitas notebook 11D |
 
-**Aturan keputusan:** bila kisaran melintasi kategori yang lebih berat dari nilai utama, kolom tindakan memakai **skenario terburuk** dan diberi tanda ⚠️.
+**Aturan keputusan:** bila kisaran melintasi kategori yang lebih berat dari nilai utama, kolom tindakan memakai **skenario terburuk** dan ditandai "skenario terburuk" pada kolom Kepastian.
 
 **Batasan utama:** belum ada validasi terhadap alat ukur UV/stasiun cuaca di ITB; hasil bersifat indikatif. Model yang tidak menyediakan `uv_index` otomatis dilewati; bila hanya satu model tersedia, kepastian ditulis "Tidak diketahui", bukan "Tinggi".

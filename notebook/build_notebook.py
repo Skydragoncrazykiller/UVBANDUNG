@@ -12,7 +12,7 @@ md = lambda t: cells.append(("markdown", t.strip("\n")))
 code = lambda t: cells.append(("code", t.strip("\n")))
 
 md("""
-# ☀️ UV & Heat Index Bandung (ITB) menurut Segmen Waktu Harian
+# UV dan Heat Index Bandung (ITB) menurut Segmen Waktu Harian
 
 **Tujuan:** menjelaskan bagaimana intensitas sinar UV dan heat index di Bandung (ITB Ganesha) berubah menurut waktu dalam sehari (dini hari, pagi, siang, sore, malam), lalu menerjemahkannya menjadi **tindakan** yang masuk akal.
 
@@ -37,11 +37,11 @@ md("""
 
 | UVI | Kategori | Makna singkat |
 |---|---|---|
-| 0–2 | Rendah 🟢 | Aman |
-| 3–5 | Sedang 🟡 | Perlu perlindungan |
-| 6–7 | Tinggi 🟠 | Perlu perlindungan ekstra |
-| 8–10 | Sangat tinggi 🔴 | Hindari paparan tanpa naungan |
-| ≥11 | Ekstrem 🟣 | Hindari luar ruang |
+| 0–2 | Rendah | Aman |
+| 3–5 | Sedang | Perlu perlindungan |
+| 6–7 | Tinggi | Perlu perlindungan ekstra |
+| 8–10 | Sangat tinggi | Hindari paparan tanpa naungan |
+| ≥11 | Ekstrem | Hindari luar ruang |
 
 UV ditentukan terutama oleh **sudut matahari** (jam), lalu **awan**, **ozon**, dan **ketinggian** (Bandung ±770 mdpl → UV sedikit lebih kuat dibanding permukaan laut). Bandung di ±6,9° LS sehingga matahari hampir selalu tinggi: UV bisa mencapai kategori "sangat tinggi–ekstrem" sepanjang tahun.
 
@@ -87,7 +87,7 @@ cek.columns = [c.replace("_2m", "") for c in cek.columns]
 print("Persentase data KOSONG per tahun (%):")
 display(cek)
 if hist["uv_index"].isna().mean() > 0.2:
-    print("⚠️ UV kosong >20%. Naikkan AWAL ke tahun yang datanya terisi.")
+    print("Peringatan: UV kosong lebih dari 20%. Naikkan AWAL ke tahun yang datanya terisi.")
 hist = hist.dropna(subset=["uv_index", "temperature_2m", "relative_humidity_2m"]).reset_index(drop=True)
 print("Baris dipakai:", f"{len(hist):,}")
 display(hist[["temperature_2m", "relative_humidity_2m", "apparent_temperature", "heat_index", "uv_index", "cloud_cover"]].describe().round(1))
@@ -224,7 +224,7 @@ print("Jam dengan ≥80% hari UV<3:", ", ".join(f"{j:02d}:00" for j in jam_aman)
 
 md("""
 ## 10. Prakiraan HARI INI → tabel tindakan
-Data langsung dari Open-Meteo Forecast API. Tindakan disusun dari aturan di `UV_TINDAKAN` dan `HI_TINDAKAN` pada sel inti (bisa Anda ubah). Kolom **Kepastian** membandingkan beberapa model Open-Meteo (model yang memberi UV identik dianggap tidak independen → "Tidak dapat dinilai") dan memperhitungkan galat input heat index; bila kisarannya melintasi kategori yang lebih berat, tindakan memakai **skenario terburuk** (tanda ⚠️).
+Data langsung dari Open-Meteo Forecast API. Tindakan disusun dari aturan di `UV_TINDAKAN` dan `HI_TINDAKAN` pada sel inti (bisa Anda ubah). Kolom **Kepastian** membandingkan beberapa model Open-Meteo (model yang memberi UV identik dianggap tidak independen → "Tidak dapat dinilai") dan memperhitungkan galat input heat index; bila kisarannya melintasi kategori yang lebih berat, tindakan memakai **skenario terburuk** (dicatat pada kolom Kepastian).
 """)
 code("""
 live = fetch_forecast(past_days=1, forecast_days=2)
@@ -236,18 +236,22 @@ seg = tambah_ketidakpastian(seg, per_model, HARI_INI)
 
 i = hari.uv_index.idxmax(); uv_p = hari.loc[i, "uv_index"]; lv = uv_level(uv_p)
 display(Markdown(f"### {HARI_INI:%A, %d %B %Y} — {LOKASI}\\n"
-                 f"{lv[3]} **UV puncak {uv_p:.1f} ({lv[2]}) pukul {int(hari.loc[i, 'jam']):02d}:00 WIB** · "
+                 f"**UV puncak {fmt_id(uv_p)} ({lv[2]}) pukul {int(hari.loc[i, 'jam']):02d}:00 WIB** · "
                  f"estimasi kulit sensitif mulai memerah ± {estimasi_menit_aman(uv_p)} menit pada puncak (kasar) · "
                  f"jendela aman UV<3: **{fmt_jendela(jendela_aman_uv(hari))}** · heat index tertinggi {hari.heat_index.max():.1f} °C"))
 
 tabel = seg.assign(
-    UV=lambda d: d.uv_emoji + " " + d.uv_max.astype(str) + " " + d.uv_label,
-    HeatIndex=lambda d: d.hi_emoji + " " + d.hi_max.astype(str) + " °C " + d.hi_label,
+    UV=lambda d: [f"{fmt_id(v)} {l}" if v >= .5 else l for v, l in zip(d.uv_max, d.uv_label)],
+    HeatIndex=lambda d: [f"{fmt_id(v)} °C {l}" for v, l in zip(d.hi_max, d.hi_label)],
     SuhuRH=lambda d: d.suhu_mean.astype(int).astype(str) + " °C / " + d.rh_mean.astype(str) + "%",
     Kepastian=lambda d: [teks_kepastian(r) for r in d.itertuples()],
 )[["segmen", "jam", "status", "UV", "HeatIndex", "SuhuRH", "Kepastian", "tindakan"]]
 tabel.columns = ["Segmen", "Jam (WIB)", "Status", "UV maks", "Heat index maks", "Suhu / RH", "Kepastian (kisaran)", "Yang sebaiknya dilakukan"]
-display(tabel.style.hide(axis="index").set_properties(subset=["Yang sebaiknya dilakukan"], **{"text-align": "left", "white-space": "normal"}))
+gaya = (tabel.style.hide(axis="index")
+        .apply(lambda c: [f"background-color:{b};color:{f};font-weight:600" for b, f in zip(seg.uv_bg, seg.uv_fg)], subset=["UV maks"])
+        .apply(lambda c: [f"background-color:{b};color:{f};font-weight:600" for b, f in zip(seg.hi_bg, seg.hi_fg)], subset=["Heat index maks"])
+        .set_properties(subset=["Yang sebaiknya dilakukan"], **{"text-align": "left", "white-space": "normal"}))
+display(gaya)
 
 fig, ax = plt.subplots(figsize=(10, 3.8))
 for lo, hi, c in [(0, 3, "#9be29b"), (3, 6, "#ffe680"), (6, 8, "#ffb366"), (8, 11, "#ff7f7f"), (11, 16, "#c9a0ff")]:
