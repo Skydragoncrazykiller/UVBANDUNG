@@ -82,7 +82,7 @@ img{{max-width:100%}} @media(prefers-color-scheme:dark){{body{{background:#12141
 <tbody>{''.join(rows)}</tbody></table>
 <p><img src="today.png" alt="Grafik hari ini"></p><p><img src="trend.png" alt="Tren 14 hari"></p>
 <h3>Cara membaca ketidakpastian</h3>
-<p><small>Data adalah keluaran model numerik Open-Meteo, bukan pengukuran sensor di ITB. "Kepastian" membandingkan beberapa model cuaca (kisaran UV) dan galat input heat index (suhu ±1 °C, RH ±10%). Bila model tidak sepakat atau kisaran melintasi kategori, tindakan memakai <b>skenario terburuk</b> (⚠️). Detail: METODOLOGI.md di repo.</small></p>
+<p><small>Data adalah keluaran model numerik Open-Meteo, bukan pengukuran sensor di ITB. "Kepastian" membandingkan beberapa model cuaca (kisaran UV) dan galat input heat index (±1 simpangan baku: suhu 1 °C, RH 8%). Bila model tidak sepakat atau kisaran melintasi kategori, tindakan memakai <b>skenario terburuk</b> (⚠️). Detail: METODOLOGI.md di repo.</small></p>
 <p><small>Diperbarui otomatis {updated:%d-%m-%Y %H:%M} WIB · Data: Open-Meteo (CC BY 4.0). Heat index: NWS/NOAA. UV: skala WHO.</small></p>
 </body></html>"""
 

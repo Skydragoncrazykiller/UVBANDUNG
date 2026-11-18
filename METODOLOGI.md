@@ -24,14 +24,14 @@ Sitasi Open-Meteo: Zippenfenig, P. (2023). *Open-Meteo.com Weather API*. Zenodo.
 - **A5** Heat index = kondisi teduh & angin ringan; tidak memasukkan radiasi langsung, sehingga di bawah terik terasa lebih panas.
 - **A6** Batas segmen adalah pilihan analis; hasil sensitif terhadapnya (lihat notebook 11D).
 - **A7** Teks tindakan adalah pedoman umum, bukan nasihat medis. Estimasi "menit sebelum kulit memerah" ≈ 200/UVI — sangat kasar, bergantung tipe kulit.
-- **A8** Galat input heat index: suhu ±1 °C, RH ±10% (asumsi, belum divalidasi lokal).
+- **A8** Galat input heat index: 1 simpangan baku = suhu 1 °C, RH 8% (asumsi, belum divalidasi lokal); kisaran HI = nilai ± simpangan baku hasil propagasi galat.
 
 ## 4. Ketidakpastian
 | Jenis | Sumber | Penanganan |
 |---|---|---|
 | Variabilitas alami | Awan & cuaca antarhari | Persentil P10–P90; bootstrap antarhari (notebook 11A) |
-| Galat model | Model numerik berbeda | Tiap jam, tabel "Kepastian" membandingkan model (`MODELS` di `core.py`): kisaran UV = min–maks antar-model termasuk "best match"; label **Tinggi** (satu kategori & selisih ≤ 1,5 UVI), **Sedang** (beda 1 kategori), **Rendah** (beda >1 kategori), **Tidak diketahui** (hanya 1 model) |
-| Galat input & rumus HI | Suhu/RH tidak sempurna; regresi NWS ±1,3 °F | Kisaran HI memakai T ±1 °C dan RH ±10% (dan antar-model); Monte Carlo di notebook 11C |
+| Galat model | Model numerik berbeda | Tiap jam, tabel "Kepastian" membandingkan model (`MODELS` di `core.py`): kisaran UV = min–maks antar-model termasuk "best match"; label **Tinggi** (satu kategori & selisih ≤ 1,5 UVI), **Sedang** (beda 1 kategori), **Rendah** (beda >1 kategori), **Tidak diketahui** (hanya 1 model), **Tidak dapat dinilai** (model "berbeda" memberi UV identik → kemungkinan sumber UV sama, bukan kesepakatan independen) |
+| Galat input & rumus HI | Suhu/RH tidak sempurna; regresi NWS ±1,3 °F | Kisaran HI = nilai ± 1 simpangan baku propagasi galat (T 1 °C, RH 8%) dan antar-model; Monte Carlo di notebook 11C |
 | Pilihan analis | Batas segmen, ambang | Uji sensitivitas notebook 11D |
 
 **Aturan keputusan:** bila kisaran melintasi kategori yang lebih berat dari nilai utama, kolom tindakan memakai **skenario terburuk** dan diberi tanda ⚠️.

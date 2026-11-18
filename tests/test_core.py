@@ -42,3 +42,17 @@ def test_ketidakpastian():
     assert s.tindakan.startswith("⚠️")
     solo = core.tambah_ketidakpastian(seg, {}, "2026-01-01")
     assert (solo.keyakinan == "Tidak diketahui").all()
+
+
+def test_model_identik_tidak_dianggap_sepakat():
+    import pandas as pd
+    t = pd.date_range("2026-01-01", periods=24, freq="h")
+    base = core.add_indices(pd.DataFrame({
+        "time": t, "temperature_2m": 22.0, "relative_humidity_2m": 80.0, "apparent_temperature": 22.0,
+        "uv_index": [0]*6 + [2, 4, 6, 7, 8, 8, 7, 6, 4, 2, 1, 0] + [0]*6, "uv_index_clear_sky": 9.0,
+        "cloud_cover": 20.0, "precipitation": 0.0}))
+    seg = core.ringkas_segmen(base[base.tanggal == "2026-01-01"])
+    out = core.tambah_ketidakpastian(seg, {"kembar": base.copy()}, "2026-01-01")
+    assert (out[out.segmen == "Siang"].keyakinan == "Tidak dapat dinilai").all()
+    # HI 22 °C tidak boleh memicu peringatan skenario terburuk hanya karena galat input
+    assert not out.tindakan.str.contains("hangat").any()

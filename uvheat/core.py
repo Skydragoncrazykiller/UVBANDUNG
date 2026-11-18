@@ -38,8 +38,9 @@ SEGMEN_ORDER = list(SEGMEN.keys())
 # Model cuaca Open-Meteo yang dibandingkan untuk menaksir ketidakpastian antar-model.
 # Model yang tidak menyediakan uv_index otomatis dilewati.
 MODELS = ["ecmwf_ifs025", "gfs_seamless", "icon_seamless", "gem_seamless"]
-# Asumsi galat input untuk heat index (suhu udara °C, kelembapan %), dipakai untuk kisaran HI.
-HI_ERR_T, HI_ERR_RH = 1.0, 10.0
+# Asumsi galat input heat index = 1 simpangan baku (suhu udara °C, kelembapan %).
+# Kisaran HI = nilai ± simpangan baku hasil propagasi galat (metode delta), konsisten dengan Monte Carlo di notebook.
+HI_ERR_T, HI_ERR_RH = 1.0, 8.0
 
 # ----------------------------------------------------------------------------
 # 2. AMBIL DATA
@@ -311,6 +312,9 @@ def kisaran_model(per_model: dict, tanggal) -> pd.DataFrame:
 def label_keyakinan(uv_lo: float, uv_hi: float, n_model: int) -> str:
     if n_model < 2:
         return "Tidak diketahui"
+    if uv_hi >= 0.5 and uv_hi == uv_lo:
+        # Model "berbeda" menghasilkan UV identik -> kemungkinan sumber UV sama, bukan bukti kesepakatan independen.
+        return "Tidak dapat dinilai"
     if uv_bucket(uv_lo) == uv_bucket(uv_hi) and (uv_hi - uv_lo) <= 1.5:
         return "Tinggi"
     if abs(uv_bucket(uv_hi) - uv_bucket(uv_lo)) <= 1:
@@ -328,9 +332,12 @@ def tambah_ketidakpastian(seg: pd.DataFrame, per_model: dict, tanggal) -> pd.Dat
         k = kis[kis["segmen"] == r.segmen]
         uvs = [r.uv_max] + k["uv"].dropna().tolist()
         his = [r.hi_max] + k["hi"].dropna().tolist()
-        # galat input: T ± HI_ERR_T, RH ± HI_ERR_RH di jam HI maksimum
-        his += [float(heat_index_c(r.t_hi - HI_ERR_T, max(r.rh_hi - HI_ERR_RH, 1))),
-                float(heat_index_c(r.t_hi + HI_ERR_T, min(r.rh_hi + HI_ERR_RH, 100)))]
+        # galat input (1 simpangan baku) di jam HI maksimum: propagasi galat dengan turunan numerik
+        h0 = float(heat_index_c(r.t_hi, r.rh_hi))
+        dT = float(heat_index_c(r.t_hi + 0.5, r.rh_hi)) - float(heat_index_c(r.t_hi - 0.5, r.rh_hi))
+        dRH = float(heat_index_c(r.t_hi, min(r.rh_hi + 2.5, 100))) - float(heat_index_c(r.t_hi, max(r.rh_hi - 2.5, 1)))
+        sd = float(np.hypot(dT * HI_ERR_T, dRH / 5.0 * HI_ERR_RH))
+        his += [r.hi_max - sd, r.hi_max + sd]
         n = 1 + k["model"].nunique()
         uv_lo, uv_hi = min(uvs), max(uvs)
         cols["uv_lo"].append(round(uv_lo, 1)); cols["uv_hi"].append(round(uv_hi, 1))
@@ -351,4 +358,6 @@ def teks_kepastian(r) -> str:
     """Satu baris ringkas untuk tabel: keyakinan + kisaran."""
     if getattr(r, "uv_hi", 0) < 0.5 and r.uv_max < 0.5:
         return f"{r.keyakinan}. HI {r.hi_lo:.0f}–{r.hi_hi:.0f} °C"
+    if r.keyakinan == "Tidak dapat dinilai":
+        return f"{r.keyakinan}: model memberi UV identik ({r.uv_max:.1f}), kemungkinan sumber sama. HI {r.hi_lo:.0f}–{r.hi_hi:.0f} °C"
     return f"{r.keyakinan}. UV {r.uv_lo:.1f}–{r.uv_hi:.1f}, HI {r.hi_lo:.0f}–{r.hi_hi:.0f} °C ({r.n_model} model)"

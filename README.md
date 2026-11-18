@@ -56,7 +56,7 @@ Dasbor web: aktifkan GitHub Pages (Settings → Pages → Branch `main`, folder 
 Riwayat per jam: [`data/hourly.csv`](data/hourly.csv) · Perubahan prakiraan hari ini sepanjang waktu: [`data/forecast_log.csv`](data/forecast_log.csv) · Ringkasan terbaru (JSON): [`data/today.json`](data/today.json)
 
 ## Cara baca
-Kolom **Kepastian (kisaran)** menunjukkan seberapa sepakat beberapa model cuaca Open-Meteo (kisaran UV) dan galat input heat index (suhu ±1 °C, RH ±10%). Jika kisaran melintasi kategori yang lebih berat, tindakan memakai **skenario terburuk** (⚠️).
+Kolom **Kepastian (kisaran)** menunjukkan seberapa sepakat beberapa model cuaca Open-Meteo (kisaran UV) dan galat input heat index (±1 simpangan baku: suhu 1 °C, RH 8%). Jika kisaran melintasi kategori yang lebih berat, tindakan memakai **skenario terburuk** (⚠️).
 
 | Segmen | Jam (WIB) |
 |---|---|
@@ -75,7 +75,7 @@ Kolom **Kepastian (kisaran)** menunjukkan seberapa sepakat beberapa model cuaca 
 
 - **Sumber:** Open-Meteo (Forecast & Historical Forecast API, CC BY 4.0); kategori UV WHO/WMO/UNEP/ICNIRP (2002); heat index NWS/NOAA (Rothfusz 1990, Steadman 1979).
 - **Data adalah keluaran model, bukan sensor ITB** — iklim mikro kampus tidak tertangkap; belum divalidasi dengan alat ukur lokal.
-- **Asumsi utama:** satu titik di ITB Ganesha; batas segmen adalah pilihan (hasil sensitif terhadapnya); heat index kondisi teduh; galat input suhu ±1 °C, RH ±10%; tindakan = pedoman umum, bukan nasihat medis.
+- **Asumsi utama:** satu titik di ITB Ganesha; batas segmen adalah pilihan (hasil sensitif terhadapnya); heat index kondisi teduh; galat input (1 simpangan baku) suhu 1 °C, RH 8%; tindakan = pedoman umum, bukan nasihat medis.
 - **Ketidakpastian:** variabilitas antarhari, selisih antar-model, galat input/rumus heat index, dan pilihan batas segmen — dihitung di notebook (bootstrap, antar-model, Monte Carlo, uji sensitivitas).
 - Rincian lengkap: [`METODOLOGI.md`](METODOLOGI.md).
 

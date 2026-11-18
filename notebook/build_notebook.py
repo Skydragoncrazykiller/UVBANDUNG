@@ -224,7 +224,7 @@ print("Jam dengan ≥80% hari UV<3:", ", ".join(f"{j:02d}:00" for j in jam_aman)
 
 md("""
 ## 10. Prakiraan HARI INI → tabel tindakan
-Data langsung dari Open-Meteo Forecast API. Tindakan disusun dari aturan di `UV_TINDAKAN` dan `HI_TINDAKAN` pada sel inti (bisa Anda ubah). Kolom **Kepastian** membandingkan beberapa model Open-Meteo dan memperhitungkan galat input heat index; bila kisarannya melintasi kategori yang lebih berat, tindakan memakai **skenario terburuk** (tanda ⚠️).
+Data langsung dari Open-Meteo Forecast API. Tindakan disusun dari aturan di `UV_TINDAKAN` dan `HI_TINDAKAN` pada sel inti (bisa Anda ubah). Kolom **Kepastian** membandingkan beberapa model Open-Meteo (model yang memberi UV identik dianggap tidak independen → "Tidak dapat dinilai") dan memperhitungkan galat input heat index; bila kisarannya melintasi kategori yang lebih berat, tindakan memakai **skenario terburuk** (tanda ⚠️).
 """)
 code("""
 live = fetch_forecast(past_days=1, forecast_days=2)
@@ -389,7 +389,7 @@ md("""
 - **A5 Heat index:** rumus NWS (kondisi teduh, angin ringan). Di bawah ±27 °C ≈ suhu udara. Tidak memasukkan radiasi matahari langsung, sehingga di bawah terik terasa lebih panas dari nilainya (lihat `apparent_temperature`).
 - **A6 Segmen:** batas jam adalah pilihan analis (WIB). Hasil per segmen memakai nilai **maksimum** dalam segmen (kondisi terburuk).
 - **A7 Kategori & tindakan:** mengikuti WHO untuk UV dan NWS untuk HI; teks tindakan adalah pedoman umum, bukan nasihat medis. Estimasi waktu memerah (≈ 200/UVI menit) sangat kasar dan bergantung tipe kulit.
-- **A8 Galat input HI:** suhu ±1 °C dan RH ±8–10% (asumsi, belum divalidasi dengan sensor lokal).
+- **A8 Galat input HI:** 1 simpangan baku = suhu 1 °C dan RH 8% (asumsi, belum divalidasi dengan sensor lokal); kisaran HI di tabel = nilai ± simpangan baku propagasi galat.
 - **A9 Statistik:** hari dianggap independen pada bootstrap; periode data beberapa tahun sehingga variasi antartahun (mis. El Niño/La Niña) hanya sebagian tertangkap.
 
 **Batasan utama:** tanpa validasi terhadap alat ukur UV/AWS di ITB (mis. stasiun BMKG/kampus) hasil ini bersifat indikatif. Langkah berikutnya yang paling berharga adalah membandingkan keluaran model dengan pengukuran lokal.
