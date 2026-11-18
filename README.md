@@ -10,7 +10,30 @@ Pemantauan intensitas sinar UV dan heat index di kampus ITB Ganesha, Bandung, pe
 ## Kondisi hari ini
 
 <!-- TODAY:START -->
-_Belum ada data. Tabel terisi otomatis setelah workflow pertama berjalan._
+**Rabu, 18 November 2026** · ITB Ganesha, Bandung · diperbarui 14:08 WIB
+
+| Ringkasan hari ini | |
+|---|---|
+| Puncak UV | **8,3** (Sangat tinggi) pukul 13:00 WIB |
+| Jam perlu proteksi (UV ≥ 3) | 08:00–17:00 |
+| Jendela UV aman (< 3) | 06:00–08:00, 17:00–18:00 |
+| Heat index tertinggi | **32,1 °C** (Waspada) |
+
+| Segmen | Jam (WIB) | UV maks | Heat index maks | Kepastian | Tindakan |
+|---|---|---|---|---|---|
+| **Dini hari** | 00:00–06:00 | Tidak ada | **24,4 °C** Aman | Tinggi · HI 23–26 °C | Tabir surya tidak diperlukan. |
+| **Pagi** | 06:00–10:00 | **4,8** Sedang (09:00) | **28,8 °C** Waspada | Tidak dapat dinilai (model memberi UV identik) · HI 27–30 °C | SPF 30+ dan kacamata hitam; cari teduh saat terik. Bawa botol minum; minum sebelum haus. Mendung tidak mengurangi risiko UV. |
+| **Siang** (berlangsung) | 10:00–15:00 | **8,3** Sangat tinggi (13:00) | **32,1 °C** Waspada | Tinggi · UV 8,3–8,3 · HI 30–34 °C · 2 model · skenario terburuk | Hindari luar ruang tanpa naungan; bila perlu SPF 50+, topi, pakaian menutup. Minum ±250 ml tiap jam secara perlahan; kurangi aktivitas berat. Mendung tidak mengurangi risiko UV. Bawa payung. |
+| **Sore** | 15:00–18:00 | **5,6** Sedang (15:00) | **24,5 °C** Aman | Tidak dapat dinilai (model memberi UV identik) · HI 23–29 °C | SPF 30+ dan kacamata hitam; cari teduh saat terik. Bawa botol minum; minum sebelum haus. Mendung tidak mengurangi risiko UV. Bawa payung. |
+| **Malam** | 18:00–24:00 | Tidak ada | **23,6 °C** Aman | Tinggi · HI 22–25 °C | Tabir surya tidak diperlukan. Bawa payung. |
+
+**Pesan hari ini untuk mahasiswa**
+
+- UV hari ini mencapai 8,3 (sangat tinggi) sekitar pukul 13:00. Pakai sunscreen dan cari tempat teduh pada 08:00–17:00.
+- Target minimal 8 gelas air putih sehari. Kalau kamu banyak di luar ruang, minum ±250 ml tiap jam secara perlahan. Cek warna pipis: kuning pucat berarti cukup.
+- Kombo hari ini: minum cukup + sunscreen + berteduh di jam puncak.
+
+<sub>Sumber: Open-Meteo. Angka adalah keluaran model, bukan pengukuran sensor di ITB; lihat [METODOLOGI.md](METODOLOGI.md) untuk asumsi dan ketidakpastian.</sub>
 <!-- TODAY:END -->
 
 ![UV dan heat index per jam hari ini](docs/today.png)
@@ -19,6 +42,22 @@ _Belum ada data. Tabel terisi otomatis setelah workflow pertama berjalan._
 <summary>Rincian per jam</summary>
 
 <!-- HOURLY:START -->
+| Jam | UV | Heat index (°C) | Suhu (°C) | RH (%) | Awan (%) |
+|---:|---:|---:|---:|---:|---:|
+| 05:00 | 0,0 | 22,2 | 21,6 | 91 | 92 |
+| 06:00 | 0,1 | 22,1 | 21,5 | 92 | 86 |
+| 07:00 | 1,1 | 24,3 | 23,7 | 82 | 99 |
+| 08:00 | 3,0 | 26,0 | 25,5 | 73 | 100 |
+| 09:00 | 4,8 | 28,8 | 27,2 | 66 | 100 |
+| 10:00 | 6,8 | 30,3 | 28,4 | 62 | 99 |
+| 11:00 | 8,3 | 32,1 | 29,8 | 58 | 99 |
+| 12:00 | 7,5 | 30,9 | 29,1 | 58 | 100 |
+| 13:00 | 8,3 | 26,3 | 25,6 | 81 | 100 |
+| 14:00 | 6,8 | 24,8 | 24,1 | 84 | 100 |
+| 15:00 | 5,6 | 24,3 | 23,6 | 87 | 100 |
+| 16:00 | 3,6 | 24,5 | 23,8 | 85 | 100 |
+| 17:00 | 1,5 | 23,8 | 23,1 | 90 | 100 |
+| 18:00 | 0,2 | 23,6 | 22,9 | 91 | 100 |
 <!-- HOURLY:END -->
 
 </details>
