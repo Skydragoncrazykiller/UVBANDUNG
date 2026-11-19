@@ -20,6 +20,7 @@ from uvheat import core, render  # noqa: E402
 
 DATA, DOCS = ROOT / "data", ROOT / "docs"
 HOURLY_CSV, LOG_CSV = DATA / "hourly.csv", DATA / "forecast_log.csv"
+UNC_CSV = DATA / "uncertainty_log.csv"
 START, END = "<!-- TODAY:START -->", "<!-- TODAY:END -->"
 HSTART, HEND = "<!-- HOURLY:START -->", "<!-- HOURLY:END -->"
 
@@ -69,6 +70,25 @@ def append_log(seg: pd.DataFrame, date: pd.Timestamp, updated: pd.Timestamp) -> 
         cur.to_csv(LOG_CSV, index=False)
 
 
+def fixture_sources(df: pd.DataFrame, now: pd.Timestamp):
+    """Ensemble & CAMS sintetis untuk uji offline (BUKAN data nyata)."""
+    d = df[df["tanggal"] == now.normalize()][["time", "temperature_2m", "relative_humidity_2m", "cloud_cover", "uv_index"]].copy()
+    for v, f in (("temperature_2m", 0.04), ("relative_humidity_2m", 0.08), ("cloud_cover", 0.2), ("uv_index", 0.12)):
+        d[f"{v}_spread"] = d[v].abs() * f
+    cams = df[df["tanggal"] == now.normalize()][["time", "uv_index"]].rename(columns={"uv_index": "uv_cams"})
+    cams["uv_cams"] = cams["uv_cams"] * 1.2
+    return {"fixture_ens": d}, cams
+
+
+def append_uncertainty_log(seg: pd.DataFrame, now: pd.Timestamp) -> None:
+    """Catat tiap jam: UV utama vs CAMS dan SD ensemble, untuk membangun riwayat perbandingan antar-sumber."""
+    cols = ["segmen", "uv_max", "uv_cams", "uv_sd", "hi_max", "hi_sd", "sd_sumber"]
+    cur = seg[cols].copy()
+    cur.insert(0, "tanggal", now.date().isoformat())
+    cur.insert(0, "dicatat_wib", now.strftime("%Y-%m-%d %H:%M"))
+    cur.to_csv(UNC_CSV, mode="a", header=not UNC_CSV.exists(), index=False)
+
+
 def replace_block(text: str, start: str, end: str, body: str) -> str:
     pat = re.compile(re.escape(start) + r".*?" + re.escape(end), re.S)
     return pat.sub(lambda _m: f"{start}\n{body}\n{end}", text)
@@ -96,8 +116,17 @@ def main() -> None:
             per_model[k] = m
     else:
         per_model = core.fetch_models(past_days=0, forecast_days=1)
-    seg = core.tambah_ketidakpastian(seg, per_model, now.normalize())
+    status: dict = {"diperbarui_wib": now.strftime("%Y-%m-%d %H:%M")}
+    if args.fixture:
+        ens, cams = fixture_sources(df, now)
+    else:
+        ens = core.fetch_ensemble_mean(forecast_days=1, status=status)
+        cams = core.fetch_cams_uv(forecast_days=1, status=status)
+    seg = core.tambah_ketidakpastian(seg, per_model, now.normalize(), ens=ens, cams=cams)
     append_log(seg, now.normalize(), now)
+    append_uncertainty_log(seg, now)
+    status["ensemble_model_ok"] = sorted(ens)
+    (DATA / "sumber_status.json").write_text(json.dumps(status, ensure_ascii=False, indent=2))
 
     (DATA / "today.json").write_text(json.dumps({
         "updated_wib": now.strftime("%Y-%m-%d %H:%M"), "lokasi": core.LOKASI,

@@ -90,7 +90,7 @@ Ambang tepatnya adalah 26,7 / 32,2 / 39,4 / 51,7 °C (konversi dari °F). WHO me
 
 Ringkasan harian juga memuat **pesan untuk mahasiswa** (UV, hidrasi, dan "kombo" minum cukup + sunscreen + berteduh) yang diselaraskan dengan materi poster Diseminasi Informasi Meteorologi.
 
-Kolom **Kepastian** membandingkan beberapa model cuaca Open-Meteo dan memperhitungkan galat input heat index. Bila kisarannya melewati kategori yang lebih berat, tindakan mengikuti skenario terburuk.
+Kolom **Kepastian** memakai pembanding UV independen (UV CAMS dan spread ensemble) serta galat input heat index; spread ensemble menunjukkan sebaran prakiraan, bukan galat terhadap pengamatan. Bila kisarannya melewati kategori yang lebih berat, tindakan mengikuti skenario terburuk.
 
 Bandung berada di sekitar 770 mdpl dan relatif sejuk, sehingga heat index umumnya mendekati suhu udara; UV cenderung menjadi faktor risiko yang lebih menentukan.
 
@@ -111,6 +111,8 @@ scripts/update.py         pembaruan data dan keluaran (dijalankan Actions tiap j
 notebook/                 notebook Colab dan skrip pembangunnya
 data/hourly.csv           riwayat per jam (UV, suhu, RH, awan, heat index)
 data/forecast_log.csv     catatan perubahan prakiraan hari ini
+data/uncertainty_log.csv  UV utama vs CAMS dan SD ensemble per jam (riwayat pembanding)
+data/sumber_status.json   status pengambilan Ensemble Mean dan CAMS pada run terakhir
 data/today.json           ringkasan terbaru (JSON)
 docs/                     dasbor web (GitHub Pages) dan grafik
 tests/                    tes unit

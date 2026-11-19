@@ -224,7 +224,7 @@ print("Jam dengan ≥80% hari UV<3:", ", ".join(f"{j:02d}:00" for j in jam_aman)
 
 md("""
 ## 10. Prakiraan HARI INI → tabel tindakan
-Data langsung dari Open-Meteo Forecast API. Tindakan disusun dari aturan di `UV_TINDAKAN` dan `HI_TINDAKAN` pada sel inti (bisa Anda ubah). Kolom **Kepastian** membandingkan beberapa model Open-Meteo (model yang memberi UV identik dianggap tidak independen → "Tidak dapat dinilai") dan memperhitungkan galat input heat index; bila kisarannya melintasi kategori yang lebih berat, tindakan memakai **skenario terburuk** (dicatat pada kolom Kepastian).
+Data langsung dari Open-Meteo Forecast API. Tindakan disusun dari aturan di `UV_TINDAKAN` dan `HI_TINDAKAN` pada sel inti (bisa Anda ubah). Kolom **Kepastian** memakai pembanding UV independen (CAMS dan spread ensemble, seksi 11F) serta galat input heat index; bila tidak ada pembanding independen, labelnya "Tidak dapat dinilai" karena UV antar-model Open-Meteo berasal dari sumber yang sama; bila kisarannya melintasi kategori yang lebih berat, tindakan memakai **skenario terburuk** (dicatat pada kolom Kepastian).
 """)
 code("""
 live = fetch_forecast(past_days=1, forecast_days=2)
@@ -232,7 +232,10 @@ hari = live[live.tanggal == HARI_INI].reset_index(drop=True)
 seg = ringkas_segmen(hari, SEKARANG)
 per_model = fetch_models(past_days=0, forecast_days=1)          # model pembanding untuk kisaran ketidakpastian
 print("Model pembanding yang menyediakan UV:", list(per_model) or "tidak ada (kepastian = 'Tidak diketahui')")
-seg = tambah_ketidakpastian(seg, per_model, HARI_INI)
+ens = fetch_ensemble_mean(forecast_days=1, status=(status := {}))     # spread T, RH, awan, UV antar-anggota ensemble
+cams = fetch_cams_uv(forecast_days=1, status=status)                    # UV CAMS: sumber independen dari GFS
+print("Status sumber tambahan:", status)
+seg = tambah_ketidakpastian(seg, per_model, HARI_INI, ens=ens, cams=cams)
 
 i = hari.uv_index.idxmax(); uv_p = hari.loc[i, "uv_index"]; lv = uv_level(uv_p)
 display(Markdown(f"### {HARI_INI:%A, %d %B %Y} — {LOKASI}\\n"
@@ -271,7 +274,7 @@ Ketidakpastian dalam analisis ini berasal dari dua jenis sumber yang berbeda sif
 | Jenis | Sumber | Bagaimana ditangani di notebook ini |
 |---|---|---|
 | **Variabilitas alami** (aleatorik) | Cuaca/awan berbeda tiap hari | Persentil P10–P90 (seksi 4–5) dan *bootstrap* untuk kepastian statistik (11A) |
-| **Galat model** (epistemik) | Data Open-Meteo = keluaran model, bukan sensor ITB; tiap model berbeda | Perbandingan antar-model (11B) |
+| **Galat model** (epistemik) | Data Open-Meteo = keluaran model, bukan sensor ITB; tiap model berbeda | Perbandingan antar-model (11B); UV CAMS dan spread ensemble (11F) |
 | **Galat input & rumus** | Heat index dihitung dari suhu & RH yang masing-masing punya galat; rumus regresi punya galat sendiri | Simulasi Monte Carlo (11C) |
 | **Pilihan analis** | Batas jam segmen, ambang kategori | Uji sensitivitas batas segmen (11D) |
 """)
@@ -298,7 +301,7 @@ ci_tab = pd.DataFrame(baris).set_index("Segmen")
 print("Nilai (selang kepercayaan 95%):"); display(ci_tab)
 """)
 
-md("### 11B. Seberapa setuju model-model cuaca? (30 hari terakhir)\nUV segmen dihitung dari tiap model Open-Meteo secara terpisah. **Spread** = selisih UV maksimum antara model tertinggi dan terendah pada hari & segmen yang sama; `% beda kategori` = persentase hari ketika model-model jatuh ke kelompok tindakan yang berbeda.")
+md("### 11B. Seberapa setuju model-model cuaca? (30 hari terakhir)\n*Catatan: UV di Forecast API Open-Meteo berbasis GFS untuk semua pilihan model, sehingga spread UV di sini diperkirakan nol; pembanding UV yang independen ada di 11F.* UV segmen dihitung dari tiap model Open-Meteo secara terpisah. **Spread** = selisih UV maksimum antara model tertinggi dan terendah pada hari & segmen yang sama; `% beda kategori` = persentase hari ketika model-model jatuh ke kelompok tindakan yang berbeda.")
 code("""
 pm30 = fetch_models(past_days=30, forecast_days=1)
 print("Model yang tersedia:", list(pm30))
@@ -340,6 +343,19 @@ for nama, (a, b) in alt.items():
     mx = hist[(hist.jam >= a) & (hist.jam < b)].groupby("tanggal").uv_index.max()
     rows.append({"Definisi Siang": nama, "UV maks rata-rata": round(mx.mean(), 1), "%hari UV≥8": round(100 * (mx >= 8).mean(), 1), "%hari UV≥11": round(100 * (mx >= 11).mean(), 1)})
 sens = pd.DataFrame(rows).set_index("Definisi Siang"); display(sens)
+""")
+
+md("""
+### 11F. Pembanding independen hari ini: spread ensemble dan UV CAMS
+- **Spread ensemble** (Ensemble Mean API) = simpangan baku antar-anggota ensemble untuk suhu, RH, awan, dan UV. Ini ukuran *sebaran prakiraan* dalam satu sistem model, **bukan galat terhadap pengamatan**; ensemble cenderung kurang menyebar (*underdispersive*), jadi kisaran sebenarnya bisa lebih lebar.
+- **UV CAMS** (Air Quality API, ~40 km) dihitung dari prakiraan komposisi atmosfer global CAMS, terpisah dari UV berbasis GFS. Selisihnya dengan UV utama menunjukkan ketidakpastian struktural.
+- Bila sumber ini gagal diambil, notebook tetap berjalan dan kembali ke asumsi galat T = 1 °C, RH = 8% dengan label "Tidak dapat dinilai" untuk UV.
+""")
+code("""
+kolom = ["segmen", "uv_max", "uv_cams", "uv_sd", "uv_lo", "uv_hi", "hi_max", "hi_sd", "sd_sumber", "keyakinan"]
+display(seg[kolom].rename(columns={"uv_max": "UV utama (GFS)", "uv_cams": "UV CAMS", "uv_sd": "SD ensemble UV",
+        "uv_lo": "UV min", "uv_hi": "UV maks", "hi_max": "HI maks", "hi_sd": "SD HI", "sd_sumber": "SD dari"}).set_index("segmen"))
+print("Model ensemble yang berhasil diambil:", list(ens) or "tidak ada")
 """)
 
 md("""

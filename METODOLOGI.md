@@ -7,7 +7,9 @@
 | 2 | [Open-Meteo Historical Forecast API](https://open-meteo.com/en/docs/historical-forecast-api) | Riwayat per jam untuk notebook |
 | 3 | WHO/WMO/UNEP/ICNIRP (2002), *Global Solar UV Index: A Practical Guide* | Kategori UV |
 | 4 | [US NWS Heat Index](https://www.weather.gov/ama/heatindex); Rothfusz (1990), NWS TA SR 90-23; Steadman (1979), *J. Appl. Meteor.* 18 | Rumus & ambang heat index: 80/90/103/125 °F = 26,7/32,2/39,4/51,7 °C |
-| 5 | Kemenkes RI, Permenkes No. 28 Tahun 2019 (AKG); imbauan BMKG tentang cuaca panas (rujukan dari draf materi kelompok, URL belum diverifikasi ulang) | Pesan hidrasi: target minimal 8 gelas/hari, ±250 ml tiap jam saat aktivitas panas di luar ruang |
+| 5 | [Open-Meteo Ensemble Mean API](https://open-meteo.com/en/docs/ensemble-mean-api) | Spread (simpangan baku antar-anggota ensemble) suhu, RH, awan, UV |
+| 6 | [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api) (CAMS global, ~40 km) | UV prakiraan independen dari UV berbasis GFS |
+| 7 | Kemenkes RI, Permenkes No. 28 Tahun 2019 (AKG); imbauan BMKG tentang cuaca panas (rujukan dari draf materi kelompok, URL belum diverifikasi ulang) | Pesan hidrasi: target minimal 8 gelas/hari, ±250 ml tiap jam saat aktivitas panas di luar ruang |
 
 Sitasi Open-Meteo: Zippenfenig, P. (2023). *Open-Meteo.com Weather API*. Zenodo. <https://doi.org/10.5281/zenodo.7970649>. Lisensi data CC BY 4.0 (non-komersial).
 
@@ -26,16 +28,18 @@ Sitasi Open-Meteo: Zippenfenig, P. (2023). *Open-Meteo.com Weather API*. Zenodo.
 - **A5** Heat index = kondisi teduh & angin ringan; tidak memasukkan radiasi langsung, sehingga di bawah terik terasa lebih panas.
 - **A6** Batas segmen adalah pilihan analis; hasil sensitif terhadapnya (lihat notebook 11D).
 - **A7** Teks tindakan adalah pedoman umum, bukan nasihat medis. Estimasi "menit sebelum kulit memerah" ≈ 200/UVI — sangat kasar, bergantung tipe kulit.
-- **A8** Galat input heat index: 1 simpangan baku = suhu 1 °C, RH 8% (asumsi, belum divalidasi lokal); kisaran HI = nilai ± simpangan baku hasil propagasi galat.
+- **A8** Galat input heat index: bila spread ensemble tersedia, SD suhu dan RH diambil dari spread ensemble pada jam heat index maksimum; bila tidak, dipakai asumsi 1 simpangan baku = suhu 1 °C, RH 8% (belum divalidasi lokal). Kisaran HI = nilai ± simpangan baku hasil propagasi galat. Kolom `sd_sumber` mencatat asal angkanya.
+- **A9** Spread ensemble adalah sebaran prakiraan, bukan galat terhadap pengamatan; ensemble cenderung kurang menyebar sehingga kisaran sebenarnya dapat lebih lebar.
+- **A10** UV di Forecast API Open-Meteo berbasis GFS untuk semua pilihan model, sehingga selisih "antar-model" UV tidak dipakai sebagai bukti kesepakatan. Pembanding independen: UV CAMS dan spread ensemble. Nama model Ensemble Mean selain `dwd_icon_eps_ensemble_mean_seamless` belum terkonfirmasi; yang ditolak API dilewati dan dicatat di `data/sumber_status.json`.
 
 ## 4. Ketidakpastian
 | Jenis | Sumber | Penanganan |
 |---|---|---|
 | Variabilitas alami | Awan & cuaca antarhari | Persentil P10–P90; bootstrap antarhari (notebook 11A) |
-| Galat model | Model numerik berbeda | Tiap jam, tabel "Kepastian" membandingkan model (`MODELS` di `core.py`): kisaran UV = min–maks antar-model termasuk "best match"; label **Tinggi** (satu kategori & selisih ≤ 1,5 UVI), **Sedang** (beda 1 kategori), **Rendah** (beda >1 kategori), **Tidak diketahui** (hanya 1 model), **Tidak dapat dinilai** (model "berbeda" memberi UV identik → kemungkinan sumber UV sama, bukan kesepakatan independen) |
-| Galat input & rumus HI | Suhu/RH tidak sempurna; regresi NWS ±1,3 °F | Kisaran HI = nilai ± 1 simpangan baku propagasi galat (T 1 °C, RH 8%) dan antar-model; Monte Carlo di notebook 11C |
+| Galat model | Model numerik berbeda | Tiap jam, kisaran UV = min–maks dari UV utama, model lain, UV utama ± 1 SD ensemble, dan UV CAMS (`fetch_ensemble_mean`, `fetch_cams_uv` di `core.py`); label **Tinggi** (satu kategori & selisih ≤ 1,5 UVI), **Sedang** (beda 1 kategori), **Rendah** (beda >1 kategori), **Tidak diketahui** (hanya 1 model dan tanpa pembanding independen), **Tidak dapat dinilai** (tanpa CAMS maupun spread ensemble, dan model "berbeda" memberi UV identik) |
+| Galat input & rumus HI | Suhu/RH tidak sempurna; regresi NWS ±1,3 °F | Kisaran HI = nilai ± 1 simpangan baku propagasi galat (SD dari spread ensemble, atau asumsi T 1 °C / RH 8%) dan antar-model; Monte Carlo di notebook 11C |
 | Pilihan analis | Batas segmen, ambang | Uji sensitivitas notebook 11D |
 
 **Aturan keputusan:** bila kisaran melintasi kategori yang lebih berat dari nilai utama, kolom tindakan memakai **skenario terburuk** dan diberi tanda ⚠️.
 
-**Batasan utama:** belum ada validasi terhadap alat ukur UV/stasiun cuaca di ITB; hasil bersifat indikatif. Model yang tidak menyediakan `uv_index` otomatis dilewati; bila hanya satu model tersedia, kepastian ditulis "Tidak diketahui", bukan "Tinggi".
+**Batasan utama:** belum ada validasi terhadap alat ukur UV/stasiun cuaca di ITB; hasil bersifat indikatif. Model atau sumber yang gagal diambil otomatis dilewati dan dicatat (`data/sumber_status.json`); tanpa pembanding, kepastian ditulis "Tidak diketahui" atau "Tidak dapat dinilai", bukan "Tinggi". Riwayat perbandingan UV utama vs CAMS dan SD ensemble tiap jam disimpan di `data/uncertainty_log.csv` untuk dianalisis kemudian.

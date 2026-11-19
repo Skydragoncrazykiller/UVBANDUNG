@@ -42,6 +42,15 @@ MODELS = ["ecmwf_ifs025", "gfs_seamless", "icon_seamless", "gem_seamless"]
 # Kisaran HI = nilai ± simpangan baku hasil propagasi galat (metode delta), konsisten dengan Monte Carlo di notebook.
 HI_ERR_T, HI_ERR_RH = 1.0, 8.0
 
+# Sumber ketidakpastian tambahan (opsional; kegagalan tidak menghentikan pipeline).
+ENSEMBLE_URL = "https://ensemble-api.open-meteo.com/v1/ensemble"
+AIRQ_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
+# Nama model Ensemble Mean: hanya yang pertama terkonfirmasi di dokumentasi; sisanya dicoba,
+# yang ditolak API dilewati dan dicatat di data/sumber_status.json.
+ENS_MODELS = ["dwd_icon_eps_ensemble_mean_seamless", "ecmwf_ifs025_ensemble_mean",
+              "gfs025_ensemble_mean", "gem_global_ensemble_mean"]
+ENS_VARS = ["temperature_2m", "relative_humidity_2m", "cloud_cover", "uv_index"]
+
 # ----------------------------------------------------------------------------
 # 2. AMBIL DATA
 # ----------------------------------------------------------------------------
@@ -105,6 +114,66 @@ def fetch_models(models=None, **kw) -> dict:
         except Exception as e:  # noqa: BLE001
             print(f"[lewati model {m}] {type(e).__name__}: {e}")
     return out
+
+
+def fetch_ensemble_mean(models=None, forecast_days: int = 1, session=None, status: dict | None = None) -> dict:
+    """Rata-rata & spread (simpangan baku antar-anggota) ensemble per jam, satu model per permintaan.
+
+    Hasil: {model: DataFrame[time, <var>, <var>_spread]}. Variabel/model yang ditolak API dilewati;
+    alasan dicatat di `status` supaya mudah dilacak dari log Actions.
+    """
+    s = session or requests
+    out = {}
+    for m in (models or ENS_MODELS):
+        got = {}
+        for v in ENS_VARS:          # per variabel, supaya satu nama salah tidak menggagalkan semuanya
+            try:
+                r = s.get(ENSEMBLE_URL, timeout=30, params={
+                    "latitude": LAT, "longitude": LON, "hourly": f"{v},{v}_spread", "models": m,
+                    "timezone": TZ, "forecast_days": forecast_days})
+                r.raise_for_status()
+                h = pd.DataFrame(r.json()["hourly"])
+                h.columns = [c[: -len(m) - 1] if c.endswith("_" + m) else c for c in h.columns]
+                if v not in h or f"{v}_spread" not in h or h[f"{v}_spread"].isna().all():
+                    raise ValueError("spread kosong")
+                got[v] = h
+            except Exception as e:  # noqa: BLE001
+                if status is not None:
+                    status.setdefault("ensemble", {}).setdefault(m, {})[v] = f"gagal: {type(e).__name__}: {str(e)[:120]}"
+                print(f"[lewati ensemble {m}/{v}] {type(e).__name__}: {str(e)[:120]}")
+        if got:
+            df = None
+            for v, h in got.items():
+                h = h[["time", v, f"{v}_spread"]]
+                df = h if df is None else df.merge(h, on="time", how="outer")
+            df["time"] = pd.to_datetime(df["time"])
+            out[m] = df
+            if status is not None:
+                for v in got:
+                    status.setdefault("ensemble", {}).setdefault(m, {})[v] = "ok"
+    return out
+
+
+def fetch_cams_uv(forecast_days: int = 1, session=None, status: dict | None = None) -> pd.DataFrame | None:
+    """UV per jam dari CAMS (Air Quality API): sumber independen terhadap UV berbasis GFS. None bila gagal."""
+    s = session or requests
+    try:
+        r = s.get(AIRQ_URL, timeout=30, params={
+            "latitude": LAT, "longitude": LON, "hourly": "uv_index,uv_index_clear_sky",
+            "timezone": TZ, "forecast_days": forecast_days, "domains": "cams_global"})
+        r.raise_for_status()
+        df = pd.DataFrame(r.json()["hourly"]).rename(columns={"uv_index": "uv_cams", "uv_index_clear_sky": "uv_cams_clear"})
+        df["time"] = pd.to_datetime(df["time"])
+        if df["uv_cams"].isna().all():
+            raise ValueError("uv_index CAMS kosong")
+        if status is not None:
+            status["cams"] = "ok"
+        return df
+    except Exception as e:  # noqa: BLE001
+        if status is not None:
+            status["cams"] = f"gagal: {type(e).__name__}: {str(e)[:120]}"
+        print(f"[lewati CAMS] {type(e).__name__}: {str(e)[:120]}")
+        return None
 
 
 def _chunks(start: pd.Timestamp, end: pd.Timestamp, days: int = 180):
@@ -337,10 +406,11 @@ def kisaran_model(per_model: dict, tanggal) -> pd.DataFrame:
     return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame(columns=["segmen", "uv", "hi", "model"])
 
 
-def label_keyakinan(uv_lo: float, uv_hi: float, n_model: int) -> str:
-    if n_model < 2:
+def label_keyakinan(uv_lo: float, uv_hi: float, n_model: int, independen: int = 0) -> str:
+    """`independen` = jumlah sumber UV yang benar-benar terpisah dari UV utama (CAMS, spread ensemble)."""
+    if n_model < 2 and independen == 0:
         return "Tidak diketahui"
-    if uv_hi >= 0.5 and uv_hi == uv_lo:
+    if independen == 0 and uv_hi >= 0.5 and uv_hi == uv_lo:
         # Model "berbeda" menghasilkan UV identik -> kemungkinan sumber UV sama, bukan bukti kesepakatan independen.
         return "Tidak dapat dinilai"
     if uv_bucket(uv_lo) == uv_bucket(uv_hi) and (uv_hi - uv_lo) <= 1.5:
@@ -350,27 +420,71 @@ def label_keyakinan(uv_lo: float, uv_hi: float, n_model: int) -> str:
     return "Rendah"
 
 
-def tambah_ketidakpastian(seg: pd.DataFrame, per_model: dict, tanggal) -> pd.DataFrame:
-    """Tambahkan kisaran UV/HI (antar-model + galat input HI), label keyakinan, dan tindakan skenario terburuk."""
+def _spread_at(ens: dict, tanggal, jam: int, var: str) -> float | None:
+    """Rata-rata spread ensemble (lintas model) untuk satu variabel pada satu jam; None bila tidak ada."""
+    vals = []
+    for df in (ens or {}).values():
+        col = f"{var}_spread"
+        if col not in df:
+            continue
+        d = df[(df["time"].dt.normalize() == pd.Timestamp(tanggal).normalize()) & (df["time"].dt.hour == jam)]
+        vals += d[col].dropna().tolist()
+    return float(np.mean(vals)) if vals else None
+
+
+def tambah_ketidakpastian(seg: pd.DataFrame, per_model: dict, tanggal, ens: dict | None = None,
+                          cams: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Tambahkan kisaran UV/HI, label keyakinan, dan tindakan skenario terburuk.
+
+    Sumber kisaran:
+      - UV  : nilai utama, model lain (jika UV-nya berbeda), ± spread ensemble (1 SD), dan UV CAMS (sumber independen).
+      - HI  : nilai utama, model lain, dan ± 1 SD propagasi galat T & RH. SD T/RH diambil dari spread ensemble
+              bila tersedia; jika tidak, dari asumsi HI_ERR_T/HI_ERR_RH.
+    Spread ensemble = sebaran antar-anggota prakiraan, BUKAN galat terhadap pengamatan.
+    """
     seg = seg.copy()
+    tgl = pd.Timestamp(tanggal).normalize()
     kis = kisaran_model(per_model, tanggal)
-    cols = {k: [] for k in ("uv_lo", "uv_hi", "hi_lo", "hi_hi", "n_model", "keyakinan")}
+    cams_seg = {}
+    if cams is not None and not cams.empty:
+        c = cams[cams["time"].dt.normalize() == tgl]
+        c = c.assign(segmen=c["time"].dt.hour.map(segmen_of_hour))
+        cams_seg = c.groupby("segmen")["uv_cams"].max().to_dict()
+    cols = {k: [] for k in ("uv_lo", "uv_hi", "hi_lo", "hi_hi", "n_model", "keyakinan",
+                            "uv_cams", "uv_sd", "hi_sd", "sd_sumber")}
     tind, terburuk = [], []
     for r in seg.itertuples():
         k = kis[kis["segmen"] == r.segmen]
         uvs = [r.uv_max] + k["uv"].dropna().tolist()
         his = [r.hi_max] + k["hi"].dropna().tolist()
-        # galat input (1 simpangan baku) di jam HI maksimum: propagasi galat dengan turunan numerik
-        h0 = float(heat_index_c(r.t_hi, r.rh_hi))
+        n_indep = 0
+        # UV: spread ensemble pada jam UV maksimum, dan UV CAMS
+        uv_sd = _spread_at(ens, tgl, int(r.jam_uv_max), "uv_index") if pd.notna(r.jam_uv_max) else None
+        if uv_sd is not None:
+            uvs += [max(r.uv_max - uv_sd, 0.0), r.uv_max + uv_sd]; n_indep += 1
+        uv_c = cams_seg.get(r.segmen)
+        if uv_c is not None and not pd.isna(uv_c):
+            uvs.append(float(uv_c)); n_indep += 1
+        else:
+            uv_c = np.nan
+        # HI: SD suhu & RH dari ensemble bila ada, jika tidak asumsi tetap
+        sd_t = _spread_at(ens, tgl, int(r.jam_hi_max), "temperature_2m") if pd.notna(r.jam_hi_max) else None
+        sd_rh = _spread_at(ens, tgl, int(r.jam_hi_max), "relative_humidity_2m") if pd.notna(r.jam_hi_max) else None
+        pakai_ens = sd_t is not None and sd_rh is not None
+        et, erh = (sd_t, sd_rh) if pakai_ens else (HI_ERR_T, HI_ERR_RH)
         dT = float(heat_index_c(r.t_hi + 0.5, r.rh_hi)) - float(heat_index_c(r.t_hi - 0.5, r.rh_hi))
         dRH = float(heat_index_c(r.t_hi, min(r.rh_hi + 2.5, 100))) - float(heat_index_c(r.t_hi, max(r.rh_hi - 2.5, 1)))
-        sd = float(np.hypot(dT * HI_ERR_T, dRH / 5.0 * HI_ERR_RH))
+        sd = float(np.hypot(dT * et, dRH / 5.0 * erh))
         his += [r.hi_max - sd, r.hi_max + sd]
         n = 1 + k["model"].nunique()
         uv_lo, uv_hi = min(uvs), max(uvs)
         cols["uv_lo"].append(round(uv_lo, 1)); cols["uv_hi"].append(round(uv_hi, 1))
         cols["hi_lo"].append(round(min(his), 1)); cols["hi_hi"].append(round(max(his), 1))
-        cols["n_model"].append(int(n)); cols["keyakinan"].append(label_keyakinan(uv_lo, uv_hi, n))
+        cols["n_model"].append(int(n)); cols["keyakinan"].append(label_keyakinan(uv_lo, uv_hi, n, n_indep))
+        cols["uv_cams"].append(round(float(uv_c), 1) if not pd.isna(uv_c) else np.nan)
+        cols["uv_sd"].append(round(uv_sd, 2) if uv_sd is not None else np.nan)
+        cols["hi_sd"].append(round(sd, 1))
+        cols["sd_sumber"].append("ensemble" if pakai_ens else "asumsi")
         if uv_bucket(uv_hi) > uv_bucket(r.uv_max) or hi_level(max(his))[1] > hi_level(r.hi_max)[1]:
             tind.append(rekomendasi(r.segmen, uv_hi, max(his), r.awan_mean, r.hujan_mm))
             terburuk.append(True)
@@ -385,13 +499,16 @@ def tambah_ketidakpastian(seg: pd.DataFrame, per_model: dict, tanggal) -> pd.Dat
 
 
 def teks_kepastian(r) -> str:
-    """Ringkasan kepastian untuk tabel: label, kisaran, dan penanda skenario terburuk."""
+    """Ringkasan kepastian untuk tabel: label, kisaran, pembanding CAMS, dan penanda skenario terburuk."""
     hi = f"HI {fmt_id(r.hi_lo, 0)}–{fmt_id(r.hi_hi, 0)} °C"
     if r.uv_hi < 0.5 and r.uv_max < 0.5:
         return f"{r.keyakinan} · {hi}"
     if r.keyakinan == "Tidak dapat dinilai":
-        return f"Tidak dapat dinilai (model memberi UV identik) · {hi}"
-    out = f"{r.keyakinan} · UV {fmt_id(r.uv_lo)}–{fmt_id(r.uv_hi)} · {hi} · {r.n_model} model"
+        return f"Tidak dapat dinilai (tanpa pembanding UV independen) · {hi}"
+    out = f"{r.keyakinan} · UV {fmt_id(r.uv_lo)}–{fmt_id(r.uv_hi)} · {hi}"
+    cams = getattr(r, "uv_cams", float("nan"))
+    if cams == cams:   # bukan NaN
+        out += f" · CAMS {fmt_id(cams)}"
     if getattr(r, "skenario_terburuk", False):
         out += " · skenario terburuk"
     return out
