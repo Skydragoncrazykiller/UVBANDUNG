@@ -10,26 +10,26 @@ Pemantauan intensitas sinar UV dan heat index di kampus ITB Ganesha, Bandung, pe
 ## Kondisi hari ini
 
 <!-- TODAY:START -->
-**Sabtu, 21 November 2026** · ITB Ganesha, Bandung · diperbarui 00:46 WIB
+**Sabtu, 21 November 2026** · ITB Ganesha, Bandung · diperbarui 14:02 WIB
 
 | Ringkasan hari ini | |
 |---|---|
-| Puncak UV | **9,3** (Sangat tinggi) pukul 12:00 WIB |
-| Jam perlu proteksi (UV ≥ 3) | 08:00–17:00 |
-| Jendela UV aman (< 3) | 06:00–08:00, 17:00–18:00 |
-| Heat index tertinggi | **30,6 °C** (Waspada) |
+| Puncak UV | **8,8** (Sangat tinggi) pukul 11:00 WIB |
+| Jam perlu proteksi (UV ≥ 3) | 09:00–17:00 |
+| Jendela UV aman (< 3) | 06:00–09:00, 17:00–18:00 |
+| Heat index tertinggi | **30,2 °C** (Waspada) |
 
 | Segmen | Jam (WIB) | UV maks | Heat index maks | Kepastian | Tindakan |
 |---|---|---|---|---|---|
-| **Dini hari** (berlangsung) | 00:00–06:00 | Tidak ada | **24,2 °C** Aman | Tinggi · HI 23–25 °C | Tabir surya tidak diperlukan. |
-| **Pagi** | 06:00–10:00 | **5,1** Sedang (09:00) | **26,1 °C** Aman | Tinggi · UV 5,1–5,5 · HI 25–28 °C · CAMS 5,5 · skenario terburuk | SPF 30+ dan kacamata hitam; cari teduh saat terik. Bawa botol minum; minum sebelum haus. Mendung tidak mengurangi risiko UV. |
-| **Siang** | 10:00–15:00 | **9,3** Sangat tinggi (12:00) | **30,6 °C** Waspada | Tinggi · UV 9,3–10,2 · HI 27–34 °C · CAMS 10,2 · skenario terburuk | Hindari luar ruang tanpa naungan; bila perlu SPF 50+, topi, pakaian menutup. Minum ±250 ml tiap jam secara perlahan; kurangi aktivitas berat. Mendung tidak mengurangi risiko UV. Bawa payung. |
-| **Sore** | 15:00–18:00 | **5,8** Sedang (15:00) | **25,6 °C** Aman | Sedang · UV 1,4–5,8 · HI 24–29 °C · CAMS 1,4 · skenario terburuk | SPF 30+ dan kacamata hitam; cari teduh saat terik. Bawa botol minum; minum sebelum haus. Mendung tidak mengurangi risiko UV. Bawa payung. |
-| **Malam** | 18:00–24:00 | Tidak ada | **24,3 °C** Aman | Tinggi · HI 23–25 °C | Tabir surya tidak diperlukan. |
+| **Dini hari** | 00:00–06:00 | Tidak ada | **24,0 °C** Aman | Tinggi · HI 23–25 °C | Tabir surya tidak diperlukan. |
+| **Pagi** | 06:00–10:00 | **5,2** Sedang (09:00) | **26,5 °C** Aman | Tinggi · UV 5,2–5,7 · HI 25–28 °C · CAMS 5,7 · skenario terburuk | SPF 30+ dan kacamata hitam; cari teduh saat terik. Bawa botol minum; minum sebelum haus. Mendung tidak mengurangi risiko UV. |
+| **Siang** (berlangsung) | 10:00–15:00 | **8,8** Sangat tinggi (11:00) | **30,2 °C** Waspada | Rendah · UV 4,9–8,8 · HI 28–32 °C · CAMS 4,9 | Hindari luar ruang tanpa naungan; bila perlu SPF 50+, topi, pakaian menutup. Bawa botol minum; minum sebelum haus. Mendung tidak mengurangi risiko UV. Bawa payung. |
+| **Sore** | 15:00–18:00 | **5,8** Sedang (15:00) | **26,3 °C** Aman | Sedang · UV 1,8–5,8 · HI 25–29 °C · CAMS 1,8 · skenario terburuk | SPF 30+ dan kacamata hitam; cari teduh saat terik. Bawa botol minum; minum sebelum haus. Mendung tidak mengurangi risiko UV. |
+| **Malam** | 18:00–24:00 | Tidak ada | **25,0 °C** Aman | Tinggi · HI 24–26 °C | Tabir surya tidak diperlukan. |
 
 **Pesan hari ini untuk mahasiswa**
 
-- UV hari ini mencapai 9,3 (sangat tinggi) sekitar pukul 12:00. Pakai sunscreen dan cari tempat teduh pada 08:00–17:00.
+- UV hari ini mencapai 8,8 (sangat tinggi) sekitar pukul 11:00. Pakai sunscreen dan cari tempat teduh pada 09:00–17:00.
 - Target minimal 8 gelas air putih sehari. Kalau kamu banyak di luar ruang, minum ±250 ml tiap jam secara perlahan. Cek warna pipis: kuning pucat berarti cukup.
 - Kombo hari ini: minum cukup + sunscreen + berteduh di jam puncak.
 
@@ -44,20 +44,20 @@ Pemantauan intensitas sinar UV dan heat index di kampus ITB Ganesha, Bandung, pe
 <!-- HOURLY:START -->
 | Jam | UV | Heat index (°C) | Suhu (°C) | RH (%) | Awan (%) |
 |---:|---:|---:|---:|---:|---:|
-| 05:00 | 0,0 | 22,7 | 22,0 | 93 | 99 |
-| 06:00 | 0,1 | 23,0 | 22,3 | 91 | 99 |
-| 07:00 | 1,1 | 23,8 | 23,1 | 88 | 100 |
-| 08:00 | 3,0 | 24,6 | 24,0 | 83 | 95 |
-| 09:00 | 5,1 | 26,1 | 25,5 | 75 | 95 |
-| 10:00 | 7,1 | 28,7 | 26,9 | 70 | 98 |
-| 11:00 | 8,7 | 30,4 | 28,3 | 64 | 100 |
-| 12:00 | 9,3 | 30,6 | 28,4 | 64 | 100 |
-| 13:00 | 6,9 | 25,6 | 25,0 | 79 | 100 |
-| 14:00 | 7,0 | 25,5 | 24,8 | 82 | 99 |
-| 15:00 | 5,8 | 25,6 | 24,9 | 83 | 100 |
-| 16:00 | 3,7 | 24,8 | 24,1 | 85 | 99 |
-| 17:00 | 1,6 | 24,7 | 24,0 | 86 | 82 |
-| 18:00 | 0,2 | 24,3 | 23,6 | 87 | 88 |
+| 05:00 | 0,0 | 22,0 | 21,4 | 93 | 98 |
+| 06:00 | 0,1 | 22,0 | 21,4 | 94 | 88 |
+| 07:00 | 1,2 | 23,4 | 22,7 | 91 | 95 |
+| 08:00 | 2,9 | 25,2 | 24,6 | 81 | 98 |
+| 09:00 | 5,2 | 26,5 | 25,9 | 74 | 71 |
+| 10:00 | 7,6 | 29,0 | 27,3 | 66 | 41 |
+| 11:00 | 8,8 | 30,2 | 28,5 | 60 | 56 |
+| 12:00 | 7,9 | 26,4 | 25,9 | 71 | 98 |
+| 13:00 | 7,8 | 28,2 | 26,6 | 70 | 84 |
+| 14:00 | 7,2 | 25,8 | 25,2 | 79 | 98 |
+| 15:00 | 5,8 | 25,5 | 24,8 | 82 | 87 |
+| 16:00 | 3,7 | 26,3 | 25,7 | 76 | 95 |
+| 17:00 | 1,6 | 25,7 | 25,1 | 79 | 96 |
+| 18:00 | 0,2 | 25,0 | 24,3 | 84 | 98 |
 <!-- HOURLY:END -->
 
 </details>
