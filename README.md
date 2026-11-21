@@ -10,22 +10,22 @@ Pemantauan intensitas sinar UV dan heat index di kampus ITB Ganesha, Bandung, pe
 ## Kondisi hari ini
 
 <!-- TODAY:START -->
-**Sabtu, 21 November 2026** · ITB Ganesha, Bandung · diperbarui 14:02 WIB
+**Sabtu, 21 November 2026** · ITB Ganesha, Bandung · diperbarui 22:20 WIB
 
 | Ringkasan hari ini | |
 |---|---|
 | Puncak UV | **8,8** (Sangat tinggi) pukul 11:00 WIB |
 | Jam perlu proteksi (UV ≥ 3) | 09:00–17:00 |
 | Jendela UV aman (< 3) | 06:00–09:00, 17:00–18:00 |
-| Heat index tertinggi | **30,2 °C** (Waspada) |
+| Heat index tertinggi | **30,1 °C** (Waspada) |
 
 | Segmen | Jam (WIB) | UV maks | Heat index maks | Kepastian | Tindakan |
 |---|---|---|---|---|---|
 | **Dini hari** | 00:00–06:00 | Tidak ada | **24,0 °C** Aman | Tinggi · HI 23–25 °C | Tabir surya tidak diperlukan. |
-| **Pagi** | 06:00–10:00 | **5,2** Sedang (09:00) | **26,5 °C** Aman | Tinggi · UV 5,2–5,7 · HI 25–28 °C · CAMS 5,7 · skenario terburuk | SPF 30+ dan kacamata hitam; cari teduh saat terik. Bawa botol minum; minum sebelum haus. Mendung tidak mengurangi risiko UV. |
-| **Siang** (berlangsung) | 10:00–15:00 | **8,8** Sangat tinggi (11:00) | **30,2 °C** Waspada | Rendah · UV 4,9–8,8 · HI 28–32 °C · CAMS 4,9 | Hindari luar ruang tanpa naungan; bila perlu SPF 50+, topi, pakaian menutup. Bawa botol minum; minum sebelum haus. Mendung tidak mengurangi risiko UV. Bawa payung. |
-| **Sore** | 15:00–18:00 | **5,8** Sedang (15:00) | **26,3 °C** Aman | Sedang · UV 1,8–5,8 · HI 25–29 °C · CAMS 1,8 · skenario terburuk | SPF 30+ dan kacamata hitam; cari teduh saat terik. Bawa botol minum; minum sebelum haus. Mendung tidak mengurangi risiko UV. |
-| **Malam** | 18:00–24:00 | Tidak ada | **25,0 °C** Aman | Tinggi · HI 24–26 °C | Tabir surya tidak diperlukan. |
+| **Pagi** | 06:00–10:00 | **5,2** Sedang (09:00) | **28,5 °C** Waspada | Sedang · UV 3,6–5,2 · HI 27–30 °C · CAMS 3,6 | SPF 30+ dan kacamata hitam; cari teduh saat terik. Bawa botol minum; minum sebelum haus. Mendung tidak mengurangi risiko UV. |
+| **Siang** | 10:00–15:00 | **8,8** Sangat tinggi (11:00) | **30,1 °C** Waspada | Rendah · UV 5,3–8,8 · HI 29–31 °C · CAMS 5,3 | Hindari luar ruang tanpa naungan; bila perlu SPF 50+, topi, pakaian menutup. Bawa botol minum; minum sebelum haus. Bawa payung. |
+| **Sore** | 15:00–18:00 | **6,0** Tinggi (15:00) | **28,1 °C** Waspada | Rendah · UV 0,6–6,0 · HI 25–31 °C · CAMS 0,6 | SPF 50+, topi, lengan panjang; ulangi tiap 2 jam. Bawa botol minum; minum sebelum haus. Mendung tidak mengurangi risiko UV. Bawa payung. |
+| **Malam** (berlangsung) | 18:00–24:00 | Tidak ada | **23,6 °C** Aman | Tinggi · HI 23–25 °C | Tabir surya tidak diperlukan. |
 
 **Pesan hari ini untuk mahasiswa**
 
@@ -46,18 +46,18 @@ Pemantauan intensitas sinar UV dan heat index di kampus ITB Ganesha, Bandung, pe
 |---:|---:|---:|---:|---:|---:|
 | 05:00 | 0,0 | 22,0 | 21,4 | 93 | 98 |
 | 06:00 | 0,1 | 22,0 | 21,4 | 94 | 88 |
-| 07:00 | 1,2 | 23,4 | 22,7 | 91 | 95 |
-| 08:00 | 2,9 | 25,2 | 24,6 | 81 | 98 |
-| 09:00 | 5,2 | 26,5 | 25,9 | 74 | 71 |
-| 10:00 | 7,6 | 29,0 | 27,3 | 66 | 41 |
-| 11:00 | 8,8 | 30,2 | 28,5 | 60 | 56 |
-| 12:00 | 7,9 | 26,4 | 25,9 | 71 | 98 |
-| 13:00 | 7,8 | 28,2 | 26,6 | 70 | 84 |
-| 14:00 | 7,2 | 25,8 | 25,2 | 79 | 98 |
-| 15:00 | 5,8 | 25,5 | 24,8 | 82 | 87 |
-| 16:00 | 3,7 | 26,3 | 25,7 | 76 | 95 |
-| 17:00 | 1,6 | 25,7 | 25,1 | 79 | 96 |
-| 18:00 | 0,2 | 25,0 | 24,3 | 84 | 98 |
+| 07:00 | 1,2 | 24,2 | 23,6 | 85 | 73 |
+| 08:00 | 2,9 | 26,0 | 25,4 | 76 | 83 |
+| 09:00 | 5,2 | 28,5 | 26,8 | 69 | 52 |
+| 10:00 | 7,6 | 30,1 | 28,1 | 64 | 50 |
+| 11:00 | 8,8 | 30,1 | 28,4 | 60 | 64 |
+| 12:00 | 7,9 | 26,8 | 26,3 | 71 | 45 |
+| 13:00 | 7,8 | 29,8 | 27,7 | 67 | 34 |
+| 14:00 | 7,3 | 29,9 | 27,8 | 67 | 80 |
+| 15:00 | 6,0 | 28,1 | 26,5 | 71 | 96 |
+| 16:00 | 3,6 | 23,4 | 22,7 | 92 | 100 |
+| 17:00 | 1,6 | 23,8 | 23,1 | 89 | 72 |
+| 18:00 | 0,2 | 23,5 | 22,8 | 90 | 65 |
 <!-- HOURLY:END -->
 
 </details>
