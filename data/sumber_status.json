@@ -1,5 +1,5 @@
 {
-  "diperbarui_wib": "2026-11-24 03:11",
+  "diperbarui_wib": "2026-11-24 11:47",
   "ensemble": {
     "dwd_icon_eps_ensemble_mean_seamless": {
       "uv_index": "gagal: ValueError: spread kosong",
@@ -21,7 +21,7 @@
     },
     "gem_global_ensemble_mean": {
       "temperature_2m": "gagal: HTTPError: 400 Client Error: Bad Request for url: https://ensemble-api.open-meteo.com/v1/ensemble?latitude=-6.8915&longitude=107.61",
-      "relative_humidity_2m": "gagal: ReadTimeout: HTTPSConnectionPool(host='ensemble-api.open-meteo.com', port=443): Read timed out. (read timeout=30)",
+      "relative_humidity_2m": "gagal: HTTPError: 400 Client Error: Bad Request for url: https://ensemble-api.open-meteo.com/v1/ensemble?latitude=-6.8915&longitude=107.61",
       "cloud_cover": "gagal: ReadTimeout: HTTPSConnectionPool(host='ensemble-api.open-meteo.com', port=443): Read timed out. (read timeout=30)",
       "uv_index": "gagal: ReadTimeout: HTTPSConnectionPool(host='ensemble-api.open-meteo.com', port=443): Read timed out. (read timeout=30)"
     }
